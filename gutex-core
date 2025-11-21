@@ -1,0 +1,47 @@
+#!/usr/bin/env node
+
+import { CliOptions } from './lib/cli-options.js';
+import { SnapshotRunner } from './lib/snapshot-runner.js';
+import { GutexEnhanced } from './lib/gutex-enhanced.js';
+
+async function main() {
+  const options = new CliOptions();
+  
+  if (!options.isValid()) {
+    console.error(options.getErrorMessage());
+    console.error(options.getUsageMessage());
+    process.exit(1);
+  }
+  
+  if (options.snapshot) {
+    const runner = new SnapshotRunner(options.bookId, options.chunkSize, options.startPercent);
+    await runner.run();
+    return;
+  }
+  
+  const gutex = new GutexEnhanced(
+    options.bookId,
+    options.chunkSize,
+    options.startPercent,
+    { showChrome: !options.raw }
+  );
+  
+  await gutex.run();
+}
+
+if (import.meta.url.startsWith('file:')) {
+  const modulePath = import.meta.url.slice(7);
+  const scriptPath = process.argv[1];
+  
+  if (scriptPath && (modulePath.endsWith(scriptPath) || scriptPath.endsWith('gutex'))) {
+    main().catch(err => {
+      console.error(`\n❌ Fatal error: ${err.message}\n`);
+      if (process.env.DEBUG === '1') {
+        console.error(err.stack);
+      }
+      process.exit(1);
+    });
+  }
+}
+
+export { main };

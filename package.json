@@ -1,0 +1,13 @@
+{
+  "name": "gutex",
+  "version": "1.1.0",
+  "type": "module",
+  "description": "Navigate Project Gutenberg texts with surgical precision",
+  "main": "gutex.js",
+  "scripts": {
+    "test": "node --test test/*.test.js"
+  },
+  "keywords": ["gutenberg", "cli", "text", "navigation"],
+  "author": "",
+  "license": "MIT"
+}

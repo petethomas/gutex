@@ -1,0 +1,105 @@
+#!/usr/bin/env node
+
+import { spawn } from 'child_process';
+import { fileURLToPath } from 'url';
+import path from 'path';
+import { CatalogManager } from './lib/catalog-manager.js';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+
+async function handleLookup(searchQuery, refreshCatalog) {
+  const catalog = new CatalogManager();
+
+  try {
+    await catalog.ensureCatalog(refreshCatalog);
+    const results = catalog.searchCatalog(searchQuery);
+
+    if (results.length === 0) {
+      console.log(`No results found for: "${searchQuery}"\n`);
+      return;
+    }
+
+    console.log(`Found ${results.length} result${results.length === 1 ? '' : 's'} for: "${searchQuery}"\n`);
+
+    for (const { id, title } of results) {
+      console.log(`    --> [${id}] "${title}"`);
+    }
+
+    console.log();
+  } catch (err) {
+    console.error(`\n❌ Error: ${err.message}\n`);
+    process.exit(1);
+  }
+}
+
+function delegateToCore(args) {
+  const corePath = path.join(__dirname, 'gutex-core');
+
+  const child = spawn(corePath, args, {
+    stdio: 'inherit'
+  });
+
+  child.on('exit', (code, signal) => {
+    if (signal) {
+      process.kill(process.pid, signal);
+    } else {
+      process.exit(code);
+    }
+  });
+
+  child.on('error', (err) => {
+    console.error(`\n❌ Failed to start gutex-core: ${err.message}\n`);
+    process.exit(1);
+  });
+}
+
+async function main() {
+  const args = process.argv.slice(2);
+
+  let lookupIndex = -1;
+  let refreshCatalog = false;
+
+  for (let i = 0; i < args.length; i++) {
+    if (args[i] === '--lookup') {
+      lookupIndex = i;
+    } else if (args[i] === '--refresh-catalog') {
+      refreshCatalog = true;
+    }
+  }
+
+  if (lookupIndex !== -1) {
+    if (lookupIndex + 1 >= args.length) {
+      console.error('\n❌ --lookup requires a search string argument\n');
+      console.error('Usage: ./gutex --lookup <search-string>');
+      console.error('Example: ./gutex --lookup "Don Qui"\n');
+      process.exit(1);
+    }
+
+    const searchQuery = args[lookupIndex + 1];
+    await handleLookup(searchQuery, refreshCatalog);
+    return;
+  }
+
+  if (refreshCatalog) {
+    console.error('\n❌ --refresh-catalog must be used with --lookup\n');
+    process.exit(1);
+  }
+
+  delegateToCore(args);
+}
+
+if (import.meta.url.startsWith('file:')) {
+  const modulePath = import.meta.url.slice(7);
+  const scriptPath = process.argv[1];
+
+  if (scriptPath && (modulePath.endsWith(scriptPath) || scriptPath.endsWith('gutex'))) {
+    main().catch(err => {
+      console.error(`\n❌ Fatal error: ${err.message}\n`);
+      if (process.env.DEBUG === '1') {
+        console.error(err.stack);
+      }
+      process.exit(1);
+    });
+  }
+}
