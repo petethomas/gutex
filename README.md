@@ -15,7 +15,7 @@ Navigate and excerpt [Project Gutenberg](https://gutenberg.org/) [eBooks](https:
 ./gutex 996 7 36              # Don Quixote, 7 words, start at 36%
 ./gutex --snapshot 996 7 36   # Print text and exit (no REPL)
 ./gutex --raw 996 7 36   # REPL without metadata display
-./gutex --lookup "Lincoln C   # REPL without metadata display
+./gutex --lookup "Lincoln"   # REPL without metadata display
 ```
 
 ## Navigate with keys
