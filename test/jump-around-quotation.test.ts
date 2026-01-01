@@ -1,10 +1,10 @@
 /**
- * Jump Around and Quotation Feature Tests
+ * Jump Around and Excerpt Feature Tests
  * 
  * Tests for:
  * 1. Jump Around mode (same-book and global variants)
- * 2. Quotation mode URL construction
- * 3. Text formatting for quotations (ellipses, quotes)
+ * 2. Excerpt mode URL construction
+ * 3. Text formatting for excerpts (ellipses, excerpts)
  * 4. wget/curl command generation
  */
 
@@ -24,13 +24,13 @@ const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const htmlPath = path.join(__dirname, '..', 'src', 'web-ui.html');
 const htmlContent = fs.readFileSync(htmlPath, 'utf8');
 
-// Extract formatQuotationText function
-const formatQuotationTextMatch = htmlContent.match(/function formatQuotationText\(text\)\s*\{([\s\S]*?)^\s{4}\}/m);
-const formatQuotationTextBody = formatQuotationTextMatch ? formatQuotationTextMatch[1] : '';
+// Extract formatExcerptText function
+const formatExcerptTextMatch = htmlContent.match(/function formatExcerptText\(text\)\s*\{([\s\S]*?)^\s{4}\}/m);
+const formatExcerptTextBody = formatExcerptTextMatch ? formatExcerptTextMatch[1] : '';
 
 // Recreate the function for testing
-function formatQuotationText(text: string): string {
-  // Add smart quotes and ellipses
+function formatExcerptText(text: string): string {
+  // Add smart excerpts and ellipses
   let formatted = text.trim();
   
   // Check if starts with capital letter (no left ellipsis needed)
@@ -43,15 +43,15 @@ function formatQuotationText(text: string): string {
   const leftEllipsis = startsWithCapital ? '' : '… ';
   const rightEllipsis = endsWithPunctuation ? '' : ' …';
   
-  // Wrap in curly quotes
+  // Wrap in curly excerpts
   return '"' + leftEllipsis + formatted + rightEllipsis + '"';
 }
 
-// URL construction function (mirrors openQuotationView logic)
-function constructQuotationUrl(origin: string, pathname: string, search: string, hash: string): string {
+// URL construction function (mirrors openExcerptView logic)
+function constructExcerptUrl(origin: string, pathname: string, search: string, hash: string): string {
   const base = origin + pathname;
   const separator = search ? '&' : '?';
-  return base + search + separator + 'quote=1' + hash;
+  return base + search + separator + 'excerpt=1' + hash;
 }
 
 // Command generation functions
@@ -69,79 +69,79 @@ function generateWgetCmd(bookId: number, byteStart: number, byteEnd: number): st
 // ANNOTATION TEXT FORMATTING TESTS
 // ============================================================
 
-describe('formatQuotationText', () => {
+describe('formatExcerptText', () => {
   it('should add ellipses when text starts lowercase and ends without punctuation', () => {
-    const result = formatQuotationText('the quick brown fox');
+    const result = formatExcerptText('the quick brown fox');
     assert.strictEqual(result, '"… the quick brown fox …"');
   });
 
   it('should not add left ellipsis when text starts with capital letter', () => {
-    const result = formatQuotationText('The quick brown fox');
+    const result = formatExcerptText('The quick brown fox');
     assert.strictEqual(result, '"The quick brown fox …"');
   });
 
   it('should not add right ellipsis when text ends with period', () => {
-    const result = formatQuotationText('the quick brown fox.');
+    const result = formatExcerptText('the quick brown fox.');
     assert.strictEqual(result, '"… the quick brown fox."');
   });
 
   it('should not add right ellipsis when text ends with exclamation', () => {
-    const result = formatQuotationText('What a fox!');
+    const result = formatExcerptText('What a fox!');
     assert.strictEqual(result, '"What a fox!"');
   });
 
   it('should not add right ellipsis when text ends with question mark', () => {
-    const result = formatQuotationText('Is it a fox?');
+    const result = formatExcerptText('Is it a fox?');
     assert.strictEqual(result, '"Is it a fox?"');
   });
 
   it('should not add right ellipsis when text ends with comma', () => {
-    const result = formatQuotationText('The fox,');
+    const result = formatExcerptText('The fox,');
     assert.strictEqual(result, '"The fox,"');
   });
 
   it('should not add right ellipsis when text ends with semicolon', () => {
-    const result = formatQuotationText('The fox;');
+    const result = formatExcerptText('The fox;');
     assert.strictEqual(result, '"The fox;"');
   });
 
   it('should not add right ellipsis when text ends with colon', () => {
-    const result = formatQuotationText('The fox:');
+    const result = formatExcerptText('The fox:');
     assert.strictEqual(result, '"The fox:"');
   });
 
-  it('should not add right ellipsis when text ends with closing quote', () => {
-    const result = formatQuotationText('He said "fox"');
+  it('should not add right ellipsis when text ends with closing excerpt', () => {
+    const result = formatExcerptText('He said "fox"');
     assert.strictEqual(result, '"He said "fox""');
   });
 
   it('should not add right ellipsis when text ends with closing paren', () => {
-    const result = formatQuotationText('The fox (brown)');
+    const result = formatExcerptText('The fox (brown)');
     assert.strictEqual(result, '"The fox (brown)"');
   });
 
   it('should not add right ellipsis when text ends with closing bracket', () => {
-    const result = formatQuotationText('The fox [brown]');
+    const result = formatExcerptText('The fox [brown]');
     assert.strictEqual(result, '"The fox [brown]"');
   });
 
   it('should handle text with no ellipses needed', () => {
-    const result = formatQuotationText('It was the best of times.');
+    const result = formatExcerptText('It was the best of times.');
     assert.strictEqual(result, '"It was the best of times."');
   });
 
   it('should trim whitespace from input', () => {
-    const result = formatQuotationText('  The fox  ');
+    const result = formatExcerptText('  The fox  ');
     assert.strictEqual(result, '"The fox …"');
   });
 
   it('should handle single word starting with capital', () => {
-    const result = formatQuotationText('Fox');
+    const result = formatExcerptText('Fox');
     assert.strictEqual(result, '"Fox …"');
   });
 
   it('should handle single word starting with lowercase', () => {
-    const result = formatQuotationText('fox');
+    const result = formatExcerptText('fox');
     assert.strictEqual(result, '"… fox …"');
   });
 });
@@ -150,31 +150,31 @@ describe('formatQuotationText', () => {
 // ANNOTATION URL CONSTRUCTION TESTS
 // ============================================================
 
-describe('constructQuotationUrl', () => {
+describe('constructExcerptUrl', () => {
   it('should construct URL with empty search and hash', () => {
-    const result = constructQuotationUrl('https://example.com', '/read', '', '#1342:1000');
-    assert.strictEqual(result, 'https://example.com/read?quote=1#1342:1000');
+    const result = constructExcerptUrl('https://example.com', '/read', '', '#1342:1000');
+    assert.strictEqual(result, 'https://example.com/read?excerpt=1#1342:1000');
   });
 
   it('should construct URL with existing search param', () => {
-    const result = constructQuotationUrl('https://example.com', '/read', '?foo=bar', '#1342:1000');
-    assert.strictEqual(result, 'https://example.com/read?foo=bar&quote=1#1342:1000');
+    const result = constructExcerptUrl('https://example.com', '/read', '?foo=bar', '#1342:1000');
+    assert.strictEqual(result, 'https://example.com/read?foo=bar&excerpt=1#1342:1000');
   });
 
   it('should construct URL with no hash', () => {
-    const result = constructQuotationUrl('https://example.com', '/read', '', '');
-    assert.strictEqual(result, 'https://example.com/read?quote=1');
+    const result = constructExcerptUrl('https://example.com', '/read', '', '');
+    assert.strictEqual(result, 'https://example.com/read?excerpt=1');
   });
 
   it('should construct URL with multiple existing params', () => {
-    const result = constructQuotationUrl('https://example.com', '/read', '?a=1&b=2', '#5000:200');
-    assert.strictEqual(result, 'https://example.com/read?a=1&b=2&quote=1#5000:200');
+    const result = constructExcerptUrl('https://example.com', '/read', '?a=1&b=2', '#5000:200');
+    assert.strictEqual(result, 'https://example.com/read?a=1&b=2&excerpt=1#5000:200');
   });
 
   it('should ensure query string comes before hash', () => {
-    const result = constructQuotationUrl('https://example.com', '/read', '', '#1342:1000:200');
-    // The key test: ?quote=1 must come BEFORE #hash
-    assert.ok(result.indexOf('?quote=1') < result.indexOf('#'));
+    const result = constructExcerptUrl('https://example.com', '/read', '', '#1342:1000:200');
+    // The key test: ?excerpt=1 must come BEFORE #hash
+    assert.ok(result.indexOf('?excerpt=1') < result.indexOf('#'));
   });
 });
 
@@ -351,29 +351,29 @@ describe('HTML structure verification', () => {
     assert.ok(htmlContent.includes("<kbd>T</kbd>"));
   });
 
-  it('should have quote button with quill emoji', () => {
-    assert.ok(htmlContent.includes('id="quoteBtn"'));
+  it('should have excerpt button with quill emoji', () => {
+    assert.ok(htmlContent.includes('id="excerptBtn"'));
     assert.ok(htmlContent.includes('✒️'));
   });
 
-  it('should have quotation mode CSS', () => {
-    assert.ok(htmlContent.includes('body.quote-mode'));
+  it('should have excerpt mode CSS', () => {
+    assert.ok(htmlContent.includes('body.excerpt-mode'));
   });
 
-  it('should hide header in quotation mode', () => {
-    assert.ok(htmlContent.includes('body.quote-mode header'));
+  it('should hide header in excerpt mode', () => {
+    assert.ok(htmlContent.includes('body.excerpt-mode header'));
     assert.ok(htmlContent.includes('display: none !important'));
   });
 
-  it('should hide footer in quotation mode', () => {
-    assert.ok(htmlContent.includes('body.quote-mode footer'));
+  it('should hide footer in excerpt mode', () => {
+    assert.ok(htmlContent.includes('body.excerpt-mode footer'));
   });
 
-  it('should have quotation-cmd class for curl/wget', () => {
-    assert.ok(htmlContent.includes('.quotation-cmd'));
+  it('should have excerpt-cmd class for curl/wget', () => {
+    assert.ok(htmlContent.includes('.excerpt-cmd'));
   });
 
-  it('should have copy button in quotation commands', () => {
+  it('should have copy button in excerpt commands', () => {
     assert.ok(htmlContent.includes('.copy-btn'));
     // Copy button text may vary (Copy, Copy Code, etc.)
     assert.ok(htmlContent.includes('Copy') || htmlContent.includes('copy'), 'Should have copy functionality');
@@ -617,4 +617,4 @@ describe('Search behavior during auto-read', () => {
   });
 });
 
-console.log('All Jump Around and Quotation tests completed.');
+console.log('All Jump Around and Excerpt tests completed.');

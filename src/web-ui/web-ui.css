@@ -2624,39 +2624,39 @@
       opacity: 0.3;
     }
 
-    /* Quotation mode - minimal display for quoting */
-    body.quote-mode {
+    /* Excerpt mode - minimal display for excerpting */
+    body.excerpt-mode {
       display: flex;
       align-items: center;
       justify-content: center;
       min-height: 100vh;
       padding: 40px;
     }
-    body.quote-mode header,
-    body.quote-mode footer,
-    body.quote-mode .debug-toggle,
-    body.quote-mode .debug-panel,
-    body.quote-mode .nav-hint,
-    body.quote-mode .progress-bar,
-    body.quote-mode .teleport-flash,
-    body.quote-mode .teleport-modal,
-    body.quote-mode .canvas-3d,
-    body.quote-mode .jump-around-indicator,
-    body.quote-mode .p2p-toggle,
-    body.quote-mode .p2p-panel,
-    body.quote-mode .p2p-streams-container,
-    body.quote-mode .mode-indicator {
+    body.excerpt-mode header,
+    body.excerpt-mode footer,
+    body.excerpt-mode .debug-toggle,
+    body.excerpt-mode .debug-panel,
+    body.excerpt-mode .nav-hint,
+    body.excerpt-mode .progress-bar,
+    body.excerpt-mode .teleport-flash,
+    body.excerpt-mode .teleport-modal,
+    body.excerpt-mode .canvas-3d,
+    body.excerpt-mode .jump-around-indicator,
+    body.excerpt-mode .p2p-toggle,
+    body.excerpt-mode .p2p-panel,
+    body.excerpt-mode .p2p-streams-container,
+    body.excerpt-mode .mode-indicator {
       display: none !important;
     }
-    body.quote-mode main,
-    body.quote-mode.mode-3d main {
+    body.excerpt-mode main,
+    body.excerpt-mode.mode-3d main {
       display: block !important;
       max-width: 640px;
       padding: 0;
       margin: 0 auto;
     }
-    body.quote-mode #content,
-    body.quote-mode.mode-3d #content {
+    body.excerpt-mode #content,
+    body.excerpt-mode.mode-3d #content {
       display: block !important;
       font-family: var(--font-body);
       font-size: 22px;
@@ -2664,19 +2664,19 @@
       text-align: left;
       color: var(--text-primary);
     }
-    body.quote-mode .quotation-quote {
+    body.excerpt-mode .excerpt-excerpt {
       margin-bottom: 24px;
     }
-    body.quote-mode .quotation-source {
+    body.excerpt-mode .excerpt-source {
       font-size: 16px;
       font-family: var(--font-ui);
       color: var(--text-muted);
       font-style: italic;
     }
-    body.quote-mode .quotation-source::before {
+    body.excerpt-mode .excerpt-source::before {
       content: '—';
     }
-    body.quote-mode .quotation-cmd {
+    body.excerpt-mode .excerpt-cmd {
       position: relative;
       padding: 12px 16px;
       background: var(--bg-secondary);
@@ -2688,10 +2688,10 @@
       line-height: 1.5;
       margin-top: 8px;
     }
-    body.quote-mode .quotation-cmd:first-of-type {
+    body.excerpt-mode .excerpt-cmd:first-of-type {
       margin-top: 48px;
     }
-    body.quote-mode .quotation-cmd .copy-btn {
+    body.excerpt-mode .excerpt-cmd .copy-btn {
       position: absolute;
       right: 8px;
       top: 50%;
@@ -2706,20 +2706,20 @@
       opacity: 0;
       transition: opacity 0.15s;
     }
-    body.quote-mode .quotation-cmd:hover .copy-btn {
+    body.excerpt-mode .excerpt-cmd:hover .copy-btn {
       opacity: 1;
     }
-    body.quote-mode .quotation-cmd .copy-btn:hover {
+    body.excerpt-mode .excerpt-cmd .copy-btn:hover {
       background: var(--btn-hover);
     }
-    body.quote-mode .quotation-cmd .copy-btn.copied {
+    body.excerpt-mode .excerpt-cmd .copy-btn.copied {
       background: var(--success-bg);
       border-color: var(--success-border);
       color: var(--success-text);
     }
 
-    /* Quotation mode home link */
-    .quotation-home-link {
+    /* Excerpt mode home link */
+    .excerpt-home-link {
       position: fixed;
       bottom: 16px;
       left: 16px;
@@ -2731,7 +2731,7 @@
       transition: opacity 0.15s;
       z-index: 1000;
     }
-    .quotation-home-link:hover {
+    .excerpt-home-link:hover {
       opacity: 1;
       color: var(--text-primary);
     }

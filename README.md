@@ -23,7 +23,7 @@ npm run web -- -p 3105
 | :bookmark: | Bookmarks & history | `b` |
 | :game_die: | Random menu | `r` |
 | :video_camera: | Toggle camera mode | `3` / `2` |
-| :black_nib: | Quotation view | `c` |
+| :black_nib: | Excerpt view | `c` |
 | :busts_in_silhouette: | Reading rooms | `m` |
 | ⤢ | Fullscreen | `z` |
 
@@ -31,7 +31,7 @@ npm run web -- -p 3105
 
 Click :mag: to open the search dialog. Filter by language using the dropdown. Click any result to start reading.
 
-### Quotations
+### Excerpts
 
 Click :black_nib: or press `c` to open the current passage in a new tab. Shows:
 - Text with smart quotes and ellipses
@@ -162,7 +162,7 @@ Press `x` to reverse direction. The :robot: button starts/stops auto-read.
 | `r` | Random menu |
 | `j` | Toggle jump around |
 | `b` | Bookmarks and history |
-| `c` | Quotation view |
+| `c` | Excerpt view |
 | `z` | Fullscreen |
 | `3` | Enter camera mode |
 | `2` | Exit camera mode |
@@ -219,7 +219,7 @@ Examples:
 | `/` | Search books |
 | `b` | View bookmarks |
 | `B` | Quick save bookmark |
-| `c` | Quotation view |
+| `c` | Excerpt view |
 | `D` | Toggle debug stats |
 | `h` `?` | Show help |
 | `q` `Esc` | Quit |

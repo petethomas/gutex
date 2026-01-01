@@ -5,7 +5,7 @@
 
 // ========== Theme Management ==========
 function initTheme() {
-  // Check URL parameter first (for quotation mode)
+  // Check URL parameter first (for excerpt mode)
   const urlParams = new URLSearchParams(window.location.search);
   const urlTheme = urlParams.get('theme');
   const savedTheme = urlTheme || localStorage.getItem('gutex-theme') || 'default';
@@ -274,7 +274,7 @@ function startJumpAround(sameBookOnly = false) {
   $('autoInterval').disabled = false;
   $('autoDirection').disabled = false;  // Allow direction changes
   $('searchToggle').disabled = true;
-  $('quoteBtn').disabled = true;
+  $('excerptBtn').disabled = true;
   $('homeBtn').disabled = true;
   
   // In 3D mode: use auto-read for smooth scrolling animation
@@ -434,7 +434,7 @@ function stopJumpAround() {
   }
   $('autoDirection').disabled = false;
   $('searchToggle').disabled = false;
-  $('quoteBtn').disabled = false;
+  $('excerptBtn').disabled = false;
   $('homeBtn').disabled = false;
 }
 
@@ -1679,9 +1679,9 @@ document.addEventListener('click', (e) => {
 });
 
 // Overflow menu actions
-$('overflowQuote').addEventListener('click', () => {
+$('overflowExcerpt').addEventListener('click', () => {
   closeOverflowMenu();
-  openQuotationView();
+  openExcerptView();
 });
 
 $('overflowRandom').addEventListener('click', () => {
@@ -4496,24 +4496,24 @@ setInterval(() => {
   }
 }, 500);
 
-// ========== Quotation mode ==========
+// ========== Excerpt mode ==========
 // Simple: use same API as main UI, curl uses byteStart/byteEnd from response
 
-function isQuotationMode() {
-  return window.location.search.includes('quote=1');
+function isExcerptMode() {
+  return window.location.search.includes('excerpt=1');
 }
 
-function openQuotationView() {
-  // CRITICAL: Use state values to ensure quotation shows what's displayed
+function openExcerptView() {
+  // CRITICAL: Use state values to ensure excerpt shows what's displayed
   const base = window.location.origin + window.location.pathname;
   const currentTheme = localStorage.getItem('gutex-theme') || 'default';
   const currentByte = rope3d.active ? Math.floor(rope3d.viewBytePosition) : state.byteStart;
   const hash = `#${state.bookId},${currentByte},${state.chunkSize}`;
-  window.open(`${base}?quote=1&theme=${currentTheme}${hash}`, '_blank');
+  window.open(`${base}?excerpt=1&theme=${currentTheme}${hash}`, '_blank');
 }
 
-function formatQuotationText(text) {
-  // Replace double quotes with single quotes (since we wrap in double quotes)
+function formatExcerptText(text) {
+  // Replace double excerpts with single excerpts (since we wrap in double excerpts)
   let formatted = text.trim().replace(/"/g, "'");
   
   const startsWithCapital = /^[A-Z]/.test(formatted);
@@ -4525,14 +4525,14 @@ function formatQuotationText(text) {
   return '"' + leftEllipsis + formatted + rightEllipsis + '"';
 }
 
-async function initQuotationMode() {
-  document.body.classList.add('quote-mode');
+async function initExcerptMode() {
+  document.body.classList.add('excerpt-mode');
   $('content').textContent = 'Loading...';
   
   // Add subtle home link in lower left
   const homeLink = document.createElement('a');
   homeLink.href = '/';
-  homeLink.className = 'quotation-home-link';
+  homeLink.className = 'excerpt-home-link';
   homeLink.textContent = 'gutex';
   document.body.appendChild(homeLink);
   
@@ -4571,7 +4571,7 @@ async function initQuotationMode() {
     } catch (e) {}
     
     // Build display
-    const quotedText = formatQuotationText(text);
+    const excerptdText = formatExcerptText(text);
     const sourceText = bookAuthor ? `${bookTitle}, ${bookAuthor}` : bookTitle;
     
     // Curl uses exact bytes from API response
@@ -4579,16 +4579,16 @@ async function initQuotationMode() {
     const curlCmd = `curl -s -r ${byteStart}-${byteEnd} "${gutenbergUrl}"`;
     
     $('content').innerHTML = `
-      <div class="quotation-quote">${processItalics(quotedText)}</div>
-      <div class="quotation-source">${escapeHtml(sourceText)}</div>
-      <div class="quotation-cmd" data-cmd="${escapeHtml(curlCmd)}">
+      <div class="excerpt-excerpt">${processItalics(excerptdText)}</div>
+      <div class="excerpt-source">${escapeHtml(sourceText)}</div>
+      <div class="excerpt-cmd" data-cmd="${escapeHtml(curlCmd)}">
         <span class="cmd-text">${escapeHtml(curlCmd)}</span>
         <button class="copy-btn">Copy?</button>
       </div>
     `;
     
     // Copy button handler
-    $('content').querySelectorAll('.quotation-cmd .copy-btn').forEach(btn => {
+    $('content').querySelectorAll('.excerpt-cmd .copy-btn').forEach(btn => {
       btn.addEventListener('click', async () => {
         const cmd = btn.parentElement.dataset.cmd;
         try {
@@ -4613,9 +4613,9 @@ async function initQuotationMode() {
   }
 }
 
-$('quoteBtn').addEventListener('click', (e) => {
+$('excerptBtn').addEventListener('click', (e) => {
   e.target.blur();
-  openQuotationView();
+  openExcerptView();
 });
 
 // ========== P2P Reading Rooms System ==========
@@ -5529,8 +5529,8 @@ loadBookmarksFromStorage();
 
 // ========== Initial load ==========
 try {
-  if (isQuotationMode()) {
-    initQuotationMode();
+  if (isExcerptMode()) {
+    initExcerptMode();
   } else {
     const params = parseHash();
     if (params) {

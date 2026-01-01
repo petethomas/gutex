@@ -9,10 +9,10 @@ const htmlContent = readFileSync(join(__dirname, '../src/web-ui.html'), 'utf-8')
 
 // ============================================================
 // URL UPDATE TIMING TESTS
-// Critical: URL must update AFTER content loads to prevent quotation bug
+// Critical: URL must update AFTER content loads to prevent excerpt bug
 // ============================================================
 
-describe('URL update timing (quotation bug prevention)', () => {
+describe('URL update timing (excerpt bug prevention)', () => {
   it('initBook should update URL after data is loaded when updateHash is true', () => {
     // Find the initBook function - it now handles URL updates internally
     const funcMatch = htmlContent.match(/async function initBook\(bookId[\s\S]*?return null;\s*\}\s*\}/);
@@ -280,7 +280,7 @@ describe('Jump Around and auto-read interaction', () => {
 // ANNOTATION URL CONSTRUCTION
 // ============================================================
 
-describe('Quotation URL construction', () => {
+describe('Excerpt URL construction', () => {
   it('buildHash function should exist', () => {
     assert.ok(htmlContent.includes('function buildHash('), 
       'buildHash function should exist for URL construction');

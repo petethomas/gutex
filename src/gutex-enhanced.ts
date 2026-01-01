@@ -119,8 +119,8 @@ export class GutexEnhanced {
     // Escape - context-aware (stop modes or quit)
     this.keyboard.onEscape(() => this.handleEscape());
     
-    // Quotation mode - show curl command
-    this.keyboard.onQuote(() => this.handleQuote());
+    // Excerpt mode - show curl command
+    this.keyboard.onExcerpt(() => this.handleExcerpt());
   }
 
   // ============================================================================
@@ -341,17 +341,17 @@ export class GutexEnhanced {
   }
 
   // ============================================================================
-  // Quotation Handler
+  // Excerpt Handler
   // ============================================================================
 
-  private async handleQuote(): Promise<void> {
+  private async handleExcerpt(): Promise<void> {
     if (!this.currentPosition) return;
     
     this.keyboard.pause();
     this.stopAutoRead();
     this.stopJumpAround();
     
-    await this.ui.showQuotation(this.keyboard, this.currentPosition);
+    await this.ui.showExcerpt(this.keyboard, this.currentPosition);
     
     this.keyboard.resume();
     this.ui.render(this.currentPosition);

@@ -407,7 +407,7 @@ export interface KeyboardCallbacks {
   pageUp: (() => void) | null;
   pageDown: (() => void) | null;
   escape: (() => void) | null;
-  quote: (() => void) | null;
+  excerpt: (() => void) | null;
 }
 
 // ============================================================================

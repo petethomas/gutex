@@ -36,7 +36,7 @@ export class KeyboardHandler {
     pageUp: null,
     pageDown: null,
     escape: null,
-    quote: null
+    excerpt: null
   };
   
   private paused = false;
@@ -65,7 +65,7 @@ export class KeyboardHandler {
   onPageUp(callback: () => void): void { this.callbacks.pageUp = callback; }
   onPageDown(callback: () => void): void { this.callbacks.pageDown = callback; }
   onEscape(callback: () => void): void { this.callbacks.escape = callback; }
-  onQuote(callback: () => void): void { this.callbacks.quote = callback; }
+  onExcerpt(callback: () => void): void { this.callbacks.excerpt = callback; }
 
   isPaused(): boolean {
     return this.paused;
@@ -195,9 +195,9 @@ export class KeyboardHandler {
       return;
     }
 
-    // Quote (show curl command)
+    // Excerpt (show curl command)
     if (name === 'c') {
-      if (this.callbacks.quote) this.callbacks.quote();
+      if (this.callbacks.excerpt) this.callbacks.excerpt();
       return;
     }
 
