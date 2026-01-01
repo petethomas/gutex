@@ -5521,8 +5521,10 @@ $('p2pRoomCodeInput').addEventListener('keypress', (e) => {
   if (e.key === 'Enter') joinP2PRoom();
 });
 
-// Initialize P2P signaling on page load
-setTimeout(initP2PSignaling, 500);
+// Initialize P2P signaling on page load (but not in excerpt mode)
+if (!isExcerptMode()) {
+  setTimeout(initP2PSignaling, 500);
+}
 
 // Load bookmarks from browser storage
 loadBookmarksFromStorage();

@@ -44,6 +44,9 @@
       --success-bg: #d4edda;
       --success-border: #28a745;
       --success-text: #155724;
+      --danger-bg: #f8d7da;
+      --danger-border: #dc3545;
+      --danger-text: #721c24;
     }
 
     /* Dark Mode Theme */
@@ -74,6 +77,9 @@
       --success-bg: #1a3d2a;
       --success-border: #28a745;
       --success-text: #7ddf9a;
+      --danger-bg: #3d1a1a;
+      --danger-border: #dc3545;
+      --danger-text: #f5a5a5;
     }
 
     /* Sci-Fi Theme */
@@ -110,6 +116,9 @@
       --success-bg: #0a2a1a;
       --success-border: #00ff88;
       --success-text: #00ff88;
+      --danger-bg: #2a0a1a;
+      --danger-border: #ff0066;
+      --danger-text: #ff6699;
     }
 
     /* Greenfield Theme - Deep forest aesthetic */
@@ -143,6 +152,9 @@
       --success-bg: #c5e8ca;
       --success-border: #2d5a32;
       --success-text: #1a3d1c;
+      --danger-bg: #f5d8d8;
+      --danger-border: #a54545;
+      --danger-text: #6a2525;
     }
 
     /* Stoneworks Theme - Industrial monolith aesthetic */
@@ -176,6 +188,9 @@
       --success-bg: #2a3a2a;
       --success-border: #6a8a6a;
       --success-text: #a0c0a0;
+      --danger-bg: #3a2a2a;
+      --danger-border: #8a5a5a;
+      --danger-text: #d0a0a0;
     }
 
     /* Redbrick Theme - Warm library aesthetic */
@@ -209,6 +224,9 @@
       --success-bg: #e8f0e0;
       --success-border: #5a7a4a;
       --success-text: #3a5030;
+      --danger-bg: #f8e8e8;
+      --danger-border: #9a4a4a;
+      --danger-text: #6a2a2a;
     }
 
     /* Midnight Theme - Deep blue night aesthetic */
@@ -242,6 +260,9 @@
       --success-bg: #102820;
       --success-border: #30a060;
       --success-text: #60d090;
+      --danger-bg: #281018;
+      --danger-border: #a03040;
+      --danger-text: #f08090;
     }
 
     /* Amber Theme - Warm amber/sepia aesthetic */
@@ -275,6 +296,9 @@
       --success-bg: #1a2810;
       --success-border: #80a040;
       --success-text: #c0e080;
+      --danger-bg: #281810;
+      --danger-border: #a05040;
+      --danger-text: #e0a080;
     }
 
     /* Theme-specific header styling for colored navbars */
@@ -1049,7 +1073,7 @@
 
     #content { text-align: justify; hyphens: auto; }
     #content.loading { color: var(--text-faint); text-align: center; font-style: italic; }
-    #content.error { color: #c00; text-align: center; }
+    #content.error { color: var(--danger-text); text-align: center; }
 
     footer {
       position: fixed;
@@ -2087,14 +2111,14 @@
     }
     .p2p-peer-item .follow-btn:hover { background: var(--btn-hover); }
     .p2p-peer-item .follow-btn.following { 
-      background: #e8f5e9; 
-      color: #2e7d32; 
-      border-color: #a5d6a7; 
+      background: var(--success-bg); 
+      color: var(--success-text); 
+      border-color: var(--success-border); 
     }
     .p2p-peer-item .follow-btn.following:hover { 
-      background: #ffebee; 
-      color: #c62828; 
-      border-color: #ef9a9a; 
+      background: var(--danger-bg); 
+      color: var(--danger-text); 
+      border-color: var(--danger-border); 
     }
     
     /* Multi-stream canvas overlay */
@@ -2704,7 +2728,8 @@
       border-radius: 3px;
       cursor: pointer;
       opacity: 0;
-      transition: opacity 0.15s;
+      transition: opacity 0.15s, color 0.15s, background 0.15s;
+      color: var(--text-primary);
     }
     body.excerpt-mode .excerpt-cmd:hover .copy-btn {
       opacity: 1;
