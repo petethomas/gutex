@@ -542,12 +542,12 @@ export class TerminalUI {
     return choice === 'y';
   }
 
-  async showAnnotation(
+  async showQuotation(
     keyboard: { prompt: (msg: string) => Promise<string> },
     position: Position
   ): Promise<void> {
     this.clearScreen();
-    console.log(`${ANSI.inverse} Annotation ${ANSI.reset}\n`);
+    console.log(`${ANSI.inverse} Quotation ${ANSI.reset}\n`);
     
     // Build the curl command
     const byteRange = `${position.byteStart}-${position.byteEnd}`;

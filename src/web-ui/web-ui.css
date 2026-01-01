@@ -2624,39 +2624,39 @@
       opacity: 0.3;
     }
 
-    /* Annotation mode - minimal display for quoting */
-    body.annotate-mode {
+    /* Quotation mode - minimal display for quoting */
+    body.quote-mode {
       display: flex;
       align-items: center;
       justify-content: center;
       min-height: 100vh;
       padding: 40px;
     }
-    body.annotate-mode header,
-    body.annotate-mode footer,
-    body.annotate-mode .debug-toggle,
-    body.annotate-mode .debug-panel,
-    body.annotate-mode .nav-hint,
-    body.annotate-mode .progress-bar,
-    body.annotate-mode .teleport-flash,
-    body.annotate-mode .teleport-modal,
-    body.annotate-mode .canvas-3d,
-    body.annotate-mode .jump-around-indicator,
-    body.annotate-mode .p2p-toggle,
-    body.annotate-mode .p2p-panel,
-    body.annotate-mode .p2p-streams-container,
-    body.annotate-mode .mode-indicator {
+    body.quote-mode header,
+    body.quote-mode footer,
+    body.quote-mode .debug-toggle,
+    body.quote-mode .debug-panel,
+    body.quote-mode .nav-hint,
+    body.quote-mode .progress-bar,
+    body.quote-mode .teleport-flash,
+    body.quote-mode .teleport-modal,
+    body.quote-mode .canvas-3d,
+    body.quote-mode .jump-around-indicator,
+    body.quote-mode .p2p-toggle,
+    body.quote-mode .p2p-panel,
+    body.quote-mode .p2p-streams-container,
+    body.quote-mode .mode-indicator {
       display: none !important;
     }
-    body.annotate-mode main,
-    body.annotate-mode.mode-3d main {
+    body.quote-mode main,
+    body.quote-mode.mode-3d main {
       display: block !important;
       max-width: 640px;
       padding: 0;
       margin: 0 auto;
     }
-    body.annotate-mode #content,
-    body.annotate-mode.mode-3d #content {
+    body.quote-mode #content,
+    body.quote-mode.mode-3d #content {
       display: block !important;
       font-family: var(--font-body);
       font-size: 22px;
@@ -2664,19 +2664,19 @@
       text-align: left;
       color: var(--text-primary);
     }
-    body.annotate-mode .annotation-quote {
+    body.quote-mode .quotation-quote {
       margin-bottom: 24px;
     }
-    body.annotate-mode .annotation-source {
+    body.quote-mode .quotation-source {
       font-size: 16px;
       font-family: var(--font-ui);
       color: var(--text-muted);
       font-style: italic;
     }
-    body.annotate-mode .annotation-source::before {
+    body.quote-mode .quotation-source::before {
       content: '—';
     }
-    body.annotate-mode .annotation-cmd {
+    body.quote-mode .quotation-cmd {
       position: relative;
       padding: 12px 16px;
       background: var(--bg-secondary);
@@ -2688,10 +2688,10 @@
       line-height: 1.5;
       margin-top: 8px;
     }
-    body.annotate-mode .annotation-cmd:first-of-type {
+    body.quote-mode .quotation-cmd:first-of-type {
       margin-top: 48px;
     }
-    body.annotate-mode .annotation-cmd .copy-btn {
+    body.quote-mode .quotation-cmd .copy-btn {
       position: absolute;
       right: 8px;
       top: 50%;
@@ -2706,20 +2706,20 @@
       opacity: 0;
       transition: opacity 0.15s;
     }
-    body.annotate-mode .annotation-cmd:hover .copy-btn {
+    body.quote-mode .quotation-cmd:hover .copy-btn {
       opacity: 1;
     }
-    body.annotate-mode .annotation-cmd .copy-btn:hover {
+    body.quote-mode .quotation-cmd .copy-btn:hover {
       background: var(--btn-hover);
     }
-    body.annotate-mode .annotation-cmd .copy-btn.copied {
+    body.quote-mode .quotation-cmd .copy-btn.copied {
       background: var(--success-bg);
       border-color: var(--success-border);
       color: var(--success-text);
     }
 
-    /* Annotation mode home link */
-    .annotation-home-link {
+    /* Quotation mode home link */
+    .quotation-home-link {
       position: fixed;
       bottom: 16px;
       left: 16px;
@@ -2731,7 +2731,7 @@
       transition: opacity 0.15s;
       z-index: 1000;
     }
-    .annotation-home-link:hover {
+    .quotation-home-link:hover {
       opacity: 1;
       color: var(--text-primary);
     }

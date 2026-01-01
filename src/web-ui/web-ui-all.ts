@@ -5,7 +5,7 @@
 
 // ========== Theme Management ==========
 function initTheme() {
-  // Check URL parameter first (for annotation mode)
+  // Check URL parameter first (for quotation mode)
   const urlParams = new URLSearchParams(window.location.search);
   const urlTheme = urlParams.get('theme');
   const savedTheme = urlTheme || localStorage.getItem('gutex-theme') || 'default';
@@ -274,7 +274,7 @@ function startJumpAround(sameBookOnly = false) {
   $('autoInterval').disabled = false;
   $('autoDirection').disabled = false;  // Allow direction changes
   $('searchToggle').disabled = true;
-  $('annotateBtn').disabled = true;
+  $('quoteBtn').disabled = true;
   $('homeBtn').disabled = true;
   
   // In 3D mode: use auto-read for smooth scrolling animation
@@ -434,7 +434,7 @@ function stopJumpAround() {
   }
   $('autoDirection').disabled = false;
   $('searchToggle').disabled = false;
-  $('annotateBtn').disabled = false;
+  $('quoteBtn').disabled = false;
   $('homeBtn').disabled = false;
 }
 
@@ -1679,9 +1679,9 @@ document.addEventListener('click', (e) => {
 });
 
 // Overflow menu actions
-$('overflowAnnotate').addEventListener('click', () => {
+$('overflowQuote').addEventListener('click', () => {
   closeOverflowMenu();
-  openAnnotationView();
+  openQuotationView();
 });
 
 $('overflowRandom').addEventListener('click', () => {
@@ -4496,23 +4496,23 @@ setInterval(() => {
   }
 }, 500);
 
-// ========== Annotation mode ==========
+// ========== Quotation mode ==========
 // Simple: use same API as main UI, curl uses byteStart/byteEnd from response
 
-function isAnnotationMode() {
-  return window.location.search.includes('annotate=1');
+function isQuotationMode() {
+  return window.location.search.includes('quote=1');
 }
 
-function openAnnotationView() {
-  // CRITICAL: Use state values to ensure annotation shows what's displayed
+function openQuotationView() {
+  // CRITICAL: Use state values to ensure quotation shows what's displayed
   const base = window.location.origin + window.location.pathname;
   const currentTheme = localStorage.getItem('gutex-theme') || 'default';
   const currentByte = rope3d.active ? Math.floor(rope3d.viewBytePosition) : state.byteStart;
   const hash = `#${state.bookId},${currentByte},${state.chunkSize}`;
-  window.open(`${base}?annotate=1&theme=${currentTheme}${hash}`, '_blank');
+  window.open(`${base}?quote=1&theme=${currentTheme}${hash}`, '_blank');
 }
 
-function formatAnnotationText(text) {
+function formatQuotationText(text) {
   // Replace double quotes with single quotes (since we wrap in double quotes)
   let formatted = text.trim().replace(/"/g, "'");
   
@@ -4525,14 +4525,14 @@ function formatAnnotationText(text) {
   return '"' + leftEllipsis + formatted + rightEllipsis + '"';
 }
 
-async function initAnnotationMode() {
-  document.body.classList.add('annotate-mode');
+async function initQuotationMode() {
+  document.body.classList.add('quote-mode');
   $('content').textContent = 'Loading...';
   
   // Add subtle home link in lower left
   const homeLink = document.createElement('a');
   homeLink.href = '/';
-  homeLink.className = 'annotation-home-link';
+  homeLink.className = 'quotation-home-link';
   homeLink.textContent = 'gutex';
   document.body.appendChild(homeLink);
   
@@ -4571,7 +4571,7 @@ async function initAnnotationMode() {
     } catch (e) {}
     
     // Build display
-    const quotedText = formatAnnotationText(text);
+    const quotedText = formatQuotationText(text);
     const sourceText = bookAuthor ? `${bookTitle}, ${bookAuthor}` : bookTitle;
     
     // Curl uses exact bytes from API response
@@ -4579,16 +4579,16 @@ async function initAnnotationMode() {
     const curlCmd = `curl -s -r ${byteStart}-${byteEnd} "${gutenbergUrl}"`;
     
     $('content').innerHTML = `
-      <div class="annotation-quote">${processItalics(quotedText)}</div>
-      <div class="annotation-source">${escapeHtml(sourceText)}</div>
-      <div class="annotation-cmd" data-cmd="${escapeHtml(curlCmd)}">
+      <div class="quotation-quote">${processItalics(quotedText)}</div>
+      <div class="quotation-source">${escapeHtml(sourceText)}</div>
+      <div class="quotation-cmd" data-cmd="${escapeHtml(curlCmd)}">
         <span class="cmd-text">${escapeHtml(curlCmd)}</span>
         <button class="copy-btn">Copy?</button>
       </div>
     `;
     
     // Copy button handler
-    $('content').querySelectorAll('.annotation-cmd .copy-btn').forEach(btn => {
+    $('content').querySelectorAll('.quotation-cmd .copy-btn').forEach(btn => {
       btn.addEventListener('click', async () => {
         const cmd = btn.parentElement.dataset.cmd;
         try {
@@ -4613,9 +4613,9 @@ async function initAnnotationMode() {
   }
 }
 
-$('annotateBtn').addEventListener('click', (e) => {
+$('quoteBtn').addEventListener('click', (e) => {
   e.target.blur();
-  openAnnotationView();
+  openQuotationView();
 });
 
 // ========== P2P Reading Rooms System ==========
@@ -5529,8 +5529,8 @@ loadBookmarksFromStorage();
 
 // ========== Initial load ==========
 try {
-  if (isAnnotationMode()) {
-    initAnnotationMode();
+  if (isQuotationMode()) {
+    initQuotationMode();
   } else {
     const params = parseHash();
     if (params) {
