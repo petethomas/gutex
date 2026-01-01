@@ -1,0 +1,428 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>Gutex</title>
+  <!-- Theme fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;500;700&family=Share+Tech+Mono&family=Lora:ital,wght@0,400;0,600;1,400&family=Roboto+Mono:wght@400;500&family=Crimson+Pro:ital,wght@0,400;0,600;1,400&family=Playfair+Display:ital,wght@0,400;0,600;1,400&family=Bitter:wght@400;500;700&family=Cinzel:wght@400;600&family=Raleway:wght@300;400;500&family=Space+Mono:wght@400;700&family=Merriweather:ital,wght@0,400;0,700;1,400&display=swap" rel="stylesheet">
+
+  <!-- Privacy-friendly analytics by Plausible -->
+  <script async src="https://plausible.io/js/pa-vnjNSDGjn2um_Ck72v_qw.js"></script>
+  <script>
+    window.plausible=window.plausible||function(){(plausible.q=plausible.q||[]).push(arguments)},plausible.init=plausible.init||function(i){plausible.o=i||{}};
+    plausible.init()
+  </script>
+  <style>
+/* CSS_PLACEHOLDER */
+  </style>
+</head>
+<body>
+  <div class="mode-indicator" id="modeIndicator"><span id="modeIndicatorText">Auto</span><span id="modeIndicatorCountdown"></span></div>
+  <div class="progress-bar" id="progress"></div>
+  <canvas class="canvas-3d" id="canvas3d" tabindex="-1"></canvas>
+
+  <header>
+    <div class="nav-left">
+      <button class="search-btn" id="homeBtn" title="Go home">🏠</button>
+      <button class="search-btn" id="searchToggle" title="Search (/)">🔍</button>
+      <div class="nav-collapsible">
+        <button class="search-btn" id="annotateBtn" title="Open annotation view">✒️</button>
+        <button class="search-btn" id="bookmarkBtn" title="Bookmarks (b)">🔖</button>
+        <button class="search-btn" id="randomBtn" title="Random menu (r)">🎲</button>
+        <button class="search-btn" id="modeToggle" title="Toggle 📖/📹 mode (3)">📹</button>
+        <button class="search-btn" id="fullscreenBtn" title="Toggle fullscreen (z)">⤢</button>
+        <select class="theme-select compact" id="themeSelect" title="Theme (Shift+T)">
+          <option value="default" title="Default theme">◻️</option>
+          <option value="dark" title="Dark theme">◼️</option>
+          <option value="scifi" title="Sci-Fi theme">🟣</option>
+          <option value="greenfield" title="Greenfield theme">🌲</option>
+          <option value="stoneworks" title="Stoneworks theme">🗿</option>
+          <option value="redbrick" title="Redbrick theme">🧱</option>
+          <option value="midnight" title="Midnight theme">🌙</option>
+          <option value="amber" title="Amber theme">🔶</option>
+        </select>
+      </div>
+      <button class="overflow-btn" id="overflowBtn" title="More options">⋯</button>
+      <div class="overflow-menu" id="overflowMenu">
+        <button class="overflow-menu-item" id="overflowAnnotate"><span class="icon">✒️</span>Annotation View</button>
+        <button class="overflow-menu-item" id="overflowBookmark"><span class="icon">🔖</span>Bookmarks</button>
+        <button class="overflow-menu-item" id="overflowRandom"><span class="icon">🎲</span>Random</button>
+        <button class="overflow-menu-item" id="overflowMode"><span class="icon">📹</span>Camera</button>
+        <button class="overflow-menu-item" id="overflowP2P"><span class="icon">👥</span>Reading Rooms</button>
+        <button class="overflow-menu-item" id="overflowDebug"><span class="icon">🐛</span>Debug</button>
+        <button class="overflow-menu-item" id="overflowFullscreen"><span class="icon">⤢</span>Fullscreen</button>
+        <div class="overflow-menu-divider"></div>
+        <div class="overflow-menu-item">
+          <span class="icon">🎨</span>
+          <select id="overflowTheme">
+            <option value="default">Default</option>
+            <option value="dark">Dark</option>
+            <option value="scifi">Sci-Fi</option>
+            <option value="greenfield">Greenfield</option>
+            <option value="stoneworks">Stoneworks</option>
+            <option value="redbrick">Redbrick</option>
+            <option value="midnight">Midnight</option>
+            <option value="amber">Amber</option>
+          </select>
+        </div>
+        <div class="overflow-menu-item overflow-text-size">
+          <span class="icon">Aa</span>
+          <select id="overflowTextSize">
+            <option value="small">Small text</option>
+            <option value="normal" selected>Normal text</option>
+            <option value="large">Large text</option>
+          </select>
+        </div>
+      </div>
+    </div>
+    <div class="nav-center">
+      <select class="text-size-select" id="textSizeSelect" title="Text size (Shift+A)">
+        <option value="small">A−</option>
+        <option value="normal" selected>A</option>
+        <option value="large">A+</option>
+      </select>
+      <button class="book-info-btn" id="bookInfoBtn" title="Book info">
+        ?
+        <div class="book-info-popup" id="bookInfoPopup">
+          <div class="book-title" id="titleBarTitle">—</div>
+          <div class="book-author" id="titleBarAuthor"></div>
+        </div>
+      </button>
+      <div class="header-progress">
+        <span class="header-percent" id="percent">—%</span>
+        <div class="header-track">
+          <div class="header-fill" id="progressFill"></div>
+        </div>
+      </div>
+      <div class="rope-controls">
+        <div class="speed-control">
+          <input type="range" id="speedSlider" min="0" max="100" value="50" title="3D scroll speed">
+          <span class="speed-value" id="speedValue">2.6 w/s</span>
+        </div>
+        <label class="checkbox-label" title="Show connecting line through words">
+          <input type="checkbox" id="showThroughLine" checked>
+          <span>Line</span>
+        </label>
+      </div>
+    </div>
+    <div class="nav-right">
+      <div class="nav-buttons">
+        <button id="btnBack" title="Back (←↓AS)" disabled>◀</button>
+        <button id="btnForward" title="Forward (→↑DW)" disabled>▶</button>
+      </div>
+      <div class="auto-read">
+        <select id="autoChunkSize" title="Words per chunk">
+          <option value="1">1w</option>
+          <option value="2">2w</option>
+          <option value="3">3w</option>
+          <option value="5">5w</option>
+          <option value="8">8w</option>
+          <option value="10">10w</option>
+          <option value="50">50w</option>
+          <option value="100">100w</option>
+          <option value="150">150w</option>
+          <option value="175">175w</option>
+          <option value="200" selected>200w</option>
+          <option value="250">250w</option>
+          <option value="300">300w</option>
+          <option value="400">400w</option>
+          <option value="500">500w</option>
+          <option value="custom">Custom...</option>
+        </select>
+        <select id="autoInterval" title="Seconds between chunks" disabled>
+          <option value="2">2s</option>
+          <option value="3">3s</option>
+          <option value="5">5s</option>
+          <option value="10" selected>10s</option>
+          <option value="15">15s</option>
+        </select>
+        <select id="autoDirection" title="Direction" disabled>
+          <option value="forward">▶</option>
+          <option value="backward">◀</option>
+        </select>
+        <button id="btnAuto" title="Start/stop auto-read">🤖</button>
+      </div>
+    </div>
+  </header>
+
+  <main tabindex="0" id="mainContent">
+    <div id="content" class="loading">Loading...</div>
+  </main>
+
+  <footer>
+    <span id="stats"></span><span class="footer-keyboard-hints"> | Space: auto | /: search | r: random | z: fullscreen | T: theme | 3: 📹 mode | 🐛: debug |</span>
+    <a href="https://github.com/petethomas/gutex" target="_blank" rel="noopener" class="footer-link" title="View on GitHub"><svg height="14" width="14" viewBox="0 0 16 16" fill="currentColor" style="vertical-align: middle;"><path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0016 8c0-4.42-3.58-8-8-8z"/></svg></a>
+  </footer>
+
+  <div class="nav-hint" id="navHint"></div>
+  <div class="teleport-flash" id="teleportFlash"></div>
+  <div class="teleport-modal" id="teleportModal">
+    <div class="teleport-title">Changing to</div>
+    <div class="teleport-info" id="teleportInfo"></div>
+    <div class="teleport-spinner"></div>
+  </div>
+
+  <!-- End of book confirmation modal -->
+  <div class="end-of-book-overlay" id="endOfBookOverlay">
+    <div class="end-of-book-modal">
+      <div class="end-of-book-title" id="endOfBookTitle">End of Book</div>
+      <div class="end-of-book-message" id="endOfBookMessage">You have reached the end of this book.</div>
+      <div class="end-of-book-question">Would you like the system to select a new book for you?</div>
+      <div class="end-of-book-buttons">
+        <button class="end-of-book-btn yes" id="endOfBookYes">Yes, new book</button>
+        <button class="end-of-book-btn no" id="endOfBookNo">No, stay here</button>
+      </div>
+    </div>
+  </div>
+
+  <button class="debug-toggle" id="debugToggle" title="Toggle debug panel">🐛</button>
+
+  <div class="debug-panel" id="debugPanel">
+    <div class="debug-header">
+      <div class="debug-tabs">
+        <button class="debug-tab active" data-tab="events">Events</button>
+        <button class="debug-tab" data-tab="requests">HTTP</button>
+        <button class="debug-tab" data-tab="mirrors">Mirrors</button>
+        <button class="debug-tab" data-tab="p2p">P2P</button>
+      </div>
+      <div class="debug-actions">
+        <button class="debug-clear" id="debugClear" title="Clear current tab">🗑</button>
+        <span id="debugStatus">Paused</span>
+      </div>
+    </div>
+    <div class="debug-content" id="debugEvents" data-tab="events"></div>
+    <div class="debug-content" id="debugRequests" data-tab="requests" style="display:none"></div>
+    <div class="debug-content" id="debugMirrors" data-tab="mirrors" style="display:none"></div>
+    <div class="debug-content" id="debugP2P" data-tab="p2p" style="display:none"></div>
+  </div>
+
+  <div class="search-overlay" id="searchOverlay">
+    <div class="search-panel">
+      <div class="search-header">
+        <input type="text" id="searchQuery" placeholder="Search by title or author...">
+        <select id="searchLanguage" class="search-lang-select" title="Search language">
+          <option value="en" title="English">🇬🇧 EN</option>
+          <option value="de" title="German">🇩🇪 DE</option>
+          <option value="fr" title="French">🇫🇷 FR</option>
+          <option value="es" title="Spanish">🇪🇸 ES</option>
+          <option value="it" title="Italian">🇮🇹 IT</option>
+          <option value="pt" title="Portuguese">🇵🇹 PT</option>
+          <option value="nl" title="Dutch">🇳🇱 NL</option>
+          <option value="fi" title="Finnish">🇫🇮 FI</option>
+          <option value="zh" title="Chinese">🇨🇳 ZH</option>
+          <option value="ja" title="Japanese">🇯🇵 JA</option>
+          <option value="la" title="Latin">🏛️ LA</option>
+          <option value="el" title="Greek">🇬🇷 EL</option>
+          <option value="all" title="All Languages">🌍 All</option>
+        </select>
+        <button id="searchClose">✕</button>
+      </div>
+      <div class="search-results">
+        <div class="status" id="searchStatus"></div>
+        <ul id="searchResultsList"></ul>
+      </div>
+    </div>
+  </div>
+
+  <div class="random-overlay" id="randomOverlay">
+    <div class="random-panel" id="randomPanel" tabindex="-1">
+      <div class="random-header">
+        <h3>Random</h3>
+        <button id="randomClose">✕</button>
+      </div>
+      <div class="random-options">
+        <button class="random-option" id="randomBookBtn">
+          <span class="icon">📚</span>
+          <span class="text">
+            <div class="title">Random Book</div>
+            <div class="desc">Start a new book from the beginning</div>
+          </span>
+          <kbd>B</kbd>
+        </button>
+        <button class="random-option" id="randomLocationBtn">
+          <span class="icon">🎯</span>
+          <span class="text">
+            <div class="title">Random Location</div>
+            <div class="desc">Jump to a random spot in a random book</div>
+          </span>
+          <kbd>L</kbd>
+        </button>
+        <button class="random-option" id="jumpAroundGlobalBtn">
+          <span class="icon">🏃‍♀️</span>
+          <span class="text">
+            <div class="title">Jump Around</div>
+            <div class="desc">Continuous random jumping across all books</div>
+          </span>
+          <kbd>J</kbd>
+        </button>
+        <button class="random-option" id="jumpAroundSameBookBtn">
+          <span class="icon">🔄</span>
+          <span class="text">
+            <div class="title">This Title</div>
+            <div class="desc">Continuous random jumping within current book</div>
+          </span>
+          <kbd>T</kbd>
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Error modal for showing errors to user (e.g., book has no plain text) -->
+  <div class="error-overlay" id="errorOverlay">
+    <div class="error-panel" id="errorPanel">
+      <div class="error-header">
+        <h3>⚠️ Error</h3>
+        <button id="errorClose">✕</button>
+      </div>
+      <div class="error-content">
+        <p id="errorMessage">An error occurred.</p>
+      </div>
+      <div class="error-actions">
+        <button id="errorOkBtn" class="error-btn primary">OK</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Home confirmation modal -->
+  <div class="error-overlay" id="homeConfirmOverlay">
+    <div class="error-panel" id="homeConfirmPanel" tabindex="-1">
+      <div class="error-header">
+        <h3>🏠 Go Home?</h3>
+        <button id="homeConfirmClose">✕</button>
+      </div>
+      <div class="error-content">
+        <p>Leave this book and return to the home page? Your current reading position will be lost.</p>
+      </div>
+      <div class="error-actions">
+        <button id="homeConfirmCancel" class="error-btn">Cancel</button>
+        <button id="homeConfirmOk" class="error-btn primary">Go Home</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Bookmark modal -->
+  <div class="bookmark-overlay" id="bookmarkOverlay">
+    <div class="bookmark-panel" id="bookmarkPanel" tabindex="-1">
+      <div class="bookmark-header">
+        <h3>🔖 Bookmarks</h3>
+        <button id="bookmarkClose">✕</button>
+      </div>
+      <div class="bookmark-tabs">
+        <button class="bookmark-tab active" data-tab="bookmarks">Bookmarks</button>
+        <button class="bookmark-tab" data-tab="history">History</button>
+      </div>
+      <div class="bookmark-actions" id="bookmarkActions">
+        <input type="text" id="bookmarkName" placeholder="Bookmark name (optional)">
+        <button id="bookmarkSaveBtn">Save</button>
+      </div>
+      <div class="bookmark-list" id="bookmarkList">
+        <div class="empty">No bookmarks yet</div>
+      </div>
+      <div class="bookmark-list" id="historyList" style="display:none">
+        <div class="empty">No history yet</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Floating 3D controls - collapsible pill -->
+  <div class="floating-3d-controls" id="floating3dControls">
+    <div class="controls-toggle" id="controlsToggle" title="Camera controls">
+      <span>⚙</span>
+      <span id="floatingPercentCompact">0%</span>
+      <span class="toggle-icon">▼</span>
+    </div>
+    <div class="controls-panel">
+      <div class="control-row">
+        <label>Speed</label>
+        <input type="range" id="floatingSpeedSlider" min="0" max="100" value="50">
+        <span class="speed-value" id="floatingSpeedValue">1.0×</span>
+      </div>
+      <div class="control-row">
+        <label>Prog</label>
+        <span id="floatingPercent" style="min-width:32px">0%</span>
+        <div class="progress-track">
+          <div class="progress-fill" id="floatingProgressFill" style="width: 0%"></div>
+        </div>
+      </div>
+      <label class="checkbox-row">
+        <input type="checkbox" id="floatingThroughLine" checked>
+        <span>Through-line</span>
+      </label>
+      <div class="position-row" title="Move controls">
+        <button class="pos-btn" data-pos="top-left" title="Top left">↖</button>
+        <button class="pos-btn" data-pos="top-right" title="Top right">↗</button>
+        <button class="pos-btn" data-pos="bottom-left" title="Bottom left">↙</button>
+        <button class="pos-btn active" data-pos="bottom-right" title="Bottom right">↘</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- P2P Reading Rooms Toggle Button -->
+  <button class="p2p-toggle" id="p2pToggle" title="Reading Rooms">👥</button>
+
+  <!-- P2P Control Panel -->
+  <div class="p2p-panel" id="p2pPanel">
+    <div class="p2p-header">
+      <h3>👥 Reading Rooms</h3>
+      <button id="p2pClose">✕</button>
+    </div>
+    <div class="p2p-status" id="p2pStatus">
+      <span class="status-dot" id="p2pStatusDot"></span>
+      <span id="p2pStatusText">Not connected</span>
+    </div>
+    <div class="p2p-content">
+      <!-- Display Name (shared between join and create) -->
+      <div class="p2p-section" id="p2pNameSection">
+        <h4>Your Name</h4>
+        <div class="p2p-input-group">
+          <input type="text" id="p2pDisplayName" placeholder="Enter your name" style="flex:1">
+        </div>
+      </div>
+
+      <!-- Join Room Section (visible when not in a room) -->
+      <div class="p2p-section" id="p2pJoinSection">
+        <h4>Enter a Room Code</h4>
+        <div class="p2p-input-group">
+          <input type="text" id="p2pRoomCodeInput" placeholder="6-letter code" maxlength="6">
+          <button class="p2p-btn-primary" id="p2pJoinBtn">Join</button>
+        </div>
+      </div>
+
+      <!-- Create Room Section -->
+      <div class="p2p-section" id="p2pCreateSection">
+        <h4>Or Start a New Room</h4>
+        <div class="p2p-input-group">
+          <button class="p2p-btn-secondary" id="p2pCreateBtn" style="flex:1">Start a Room</button>
+        </div>
+      </div>
+
+      <!-- Room Info Section (visible when in a room) -->
+      <div class="p2p-section" id="p2pRoomSection" style="display:none">
+        <h4>Your Room</h4>
+        <div class="p2p-room-code">
+          <div class="code" id="p2pRoomCodeDisplay">------</div>
+          <div class="label">Share this code so others can join</div>
+          <button class="copy-btn" id="p2pCopyCode">Copy Code</button>
+        </div>
+        <button class="p2p-btn-danger" id="p2pLeaveBtn" style="width:100%">Leave this Room</button>
+      </div>
+
+      <!-- Peers Section -->
+      <div class="p2p-section" id="p2pPeersSection" style="display:none">
+        <h4>People (<span id="p2pPeerCount">0</span>)</h4>
+        <ul class="p2p-peer-list" id="p2pPeerList"></ul>
+      </div>
+    </div>
+  </div>
+
+  <!-- P2P Picture-in-Picture streams container -->
+  <div class="p2p-streams-container" id="p2pStreamsContainer"></div>
+
+  <script>
+/* JS_PLACEHOLDER */
+  </script>
+</body>
+</html>

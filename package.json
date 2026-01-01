@@ -1,0 +1,47 @@
+{
+  "name": "gutex",
+  "version": "0.1.0",
+  "type": "module",
+  "description": "Explore text at Project Gutenberg",
+  "main": "dist/src/gutex.js",
+  "bin": {
+    "gutex": "./dist/src/gutex.js",
+    "gutex-core": "./dist/src/gutex-core.js",
+    "gutex-web": "./dist/src/gutex-web.js"
+  },
+  "scripts": {
+    "build": "npx tsc && node src/web-ui/build-web-ui.js && cp src/web-landing.html dist/src/",
+    "build:prod": "npx tsc && node src/web-ui/build-web-ui.js --production && cp src/web-landing.html dist/src/",
+    "build:dev": "npx tsc && node src/web-ui/build-web-ui.js && cp src/web-landing.html dist/src/",
+    "cli": "node dist/src/gutex.js",
+    "core": "node dist/src/gutex-core.js",
+    "web": "node dist/src/gutex-web.js",
+    "start": "node dist/src/gutex-web.js",
+    "test": "node scripts/test-runner.js",
+    "test:fast": "node --test --test-reporter spec dist/test/*.test.js",
+    "test:ts": "npm run build && node scripts/test-runner.js",
+    "test:quick": "node --test --test-reporter spec --test-name-pattern='^(?!P2P)' dist/test/*.test.js",
+    "test:p2p": "node --test --test-reporter spec dist/test/p2p-signaling.test.js",
+    "clean": "rm -rf dist; rm -rf node_modules",
+    "prepublishOnly": "npm run build:prod"
+  },
+  "keywords": [
+    "gutenberg",
+    "cli",
+    "webui",
+    "text",
+    "navigation",
+    "typescript"
+  ],
+  "author": "pete@xminusone.net",
+  "license": "MIT",
+  "devDependencies": {
+    "@types/node": "^20.0.0",
+    "@types/ws": "^8.18.1",
+    "canvas": "^3.2.0",
+    "typescript": "^5.0.0"
+  },
+  "dependencies": {
+    "ws": "^8.18.3"
+  }
+}
