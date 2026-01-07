@@ -15,13 +15,10 @@ import { fileURLToPath } from 'node:url';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 
-// Get project root - just go up one level from test/
-const projectRoot = join(__dirname, '..');
-
-// Load CSS and TS source files from the actual src directory
-const cssContent = readFileSync(join(projectRoot, 'src/web-ui/web-ui.css'), 'utf-8');
-const tsContent = readFileSync(join(projectRoot, 'src/web-ui/web-ui-all.ts'), 'utf-8');
-const htmlContent = readFileSync(join(projectRoot, 'src/web-ui/web-ui-template.html'), 'utf-8');
+// From dist/test/, go up to project root to read source files
+const cssContent = readFileSync(join(__dirname, '../../src/web-ui/web-ui.css'), 'utf-8');
+const tsContent = readFileSync(join(__dirname, '../../src/web-ui/web-ui-all.ts'), 'utf-8');
+const htmlContent = readFileSync(join(__dirname, '../../src/web-ui/web-ui-template.html'), 'utf-8');
 
 // ============================================================
 // VIEWPORT META TAG TESTS
