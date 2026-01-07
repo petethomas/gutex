@@ -294,11 +294,11 @@ src/
   web-landing.html Search page
   web-server.ts    API server
   web-ui/          Reader UI (camera mode, bookmarks, reading rooms)
-    build-web-ui.js
+    build-web-ui.js   Build script (compiles modules, assembles HTML)
     tsconfig.json
-    web-ui-all.ts
     web-ui-template.html
     web-ui.css
+    modules/          Modular TypeScript source (24 files)
 ```
 
 ## Implementation notes

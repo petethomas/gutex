@@ -9,7 +9,7 @@
 
 import { describe, it, before } from 'node:test';
 import assert from 'node:assert';
-import { readFileSync } from 'node:fs';
+import { readFileSync, readdirSync } from 'node:fs';
 import { join, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
@@ -17,7 +17,7 @@ const __dirname = dirname(fileURLToPath(import.meta.url));
 
 // From dist/test/, go up to project root to read source files
 const cssContent = readFileSync(join(__dirname, '../../src/web-ui/web-ui.css'), 'utf-8');
-const tsContent = readFileSync(join(__dirname, '../../src/web-ui/web-ui-all.ts'), 'utf-8');
+const tsContent = readdirSync(join(__dirname, '../../src/web-ui/modules')).filter(f => f.endsWith('.ts')).map(f => readFileSync(join(__dirname, '../../src/web-ui/modules', f), 'utf-8')).join('\n');
 const htmlContent = readFileSync(join(__dirname, '../../src/web-ui/web-ui-template.html'), 'utf-8');
 
 // ============================================================

@@ -9,8 +9,8 @@ const srcDir = path.resolve(__dirname, '..');
 const distDir = path.resolve(__dirname, '../../dist/src');
 const webUiDistDir = path.join(distDir, 'web-ui');
 
-// Compile web-ui TypeScript with its own tsconfig
-console.log('Compiling web-ui TypeScript...');
+// Compile web-ui TypeScript modules with its own tsconfig
+console.log('Compiling web-ui TypeScript modules...');
 try {
   execSync('npx tsc -p tsconfig.json', { cwd: __dirname, stdio: 'inherit' });
 } catch (e) {
@@ -18,13 +18,25 @@ try {
   process.exit(1);
 }
 
-// Read compiled JS and other files
+// Read and concatenate compiled JS modules in sorted order
+const moduleFiles = fs.readdirSync(path.join(webUiDistDir, 'modules'))
+  .filter(f => f.endsWith('.js'))
+  .sort(); // Alphabetical sort ensures correct order (01-, 02-, etc.)
+
+console.log(`Found ${moduleFiles.length} modules`);
+
+let js = '';
+for (const file of moduleFiles) {
+  const content = fs.readFileSync(path.join(webUiDistDir, 'modules', file), 'utf8');
+  js += content + '\n';
+}
+
+// Strip any empty exports that TypeScript might add
+js = js.replace(/^export\s*\{\s*\}\s*;?\s*$/gm, '');
+
+// Read template and CSS
 const template = fs.readFileSync(path.join(__dirname, 'web-ui-template.html'), 'utf8');
 const css = fs.readFileSync(path.join(__dirname, 'web-ui.css'), 'utf8');
-let js = fs.readFileSync(path.join(webUiDistDir, 'web-ui-all.js'), 'utf8');
-
-// Strip the empty export that was added for TypeScript module detection
-js = js.replace(/^export\s*\{\s*\}\s*;?\s*$/gm, '');
 
 // Assemble final HTML
 const html = template
