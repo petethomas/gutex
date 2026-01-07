@@ -42,23 +42,23 @@ const rope3d = {
   config: {
     WORD_SPACING: 300,         // Distance between consecutive words along spline
     
-    // Primary sweeping curves (medium wavelength for visible motion)
-    CURVE_AMPLITUDE_X: 600,    // Wide horizontal sweeps
-    CURVE_AMPLITUDE_Y: 400,    // Big vertical hills
-    CURVE_PERIOD_X: 25,        // 25 words per horizontal sweep - visible!
-    CURVE_PERIOD_Y: 18,        // 18 words per vertical wave - hills!
+    // Primary sweeping curves - VERY broad and gentle
+    CURVE_AMPLITUDE_X: 400,    // Moderate horizontal drift
+    CURVE_AMPLITUDE_Y: 250,    // Gentle vertical motion
+    CURVE_PERIOD_X: 120,       // 120 words per horizontal sweep - very slow!
+    CURVE_PERIOD_Y: 90,        // 90 words per vertical wave - gentle hills
     
-    // Secondary curves (adds banking and variation)
-    CURVE2_AMPLITUDE_X: 250,
-    CURVE2_AMPLITUDE_Y: 200,
-    CURVE2_PERIOD_X: 40,
-    CURVE2_PERIOD_Y: 30,
+    // Secondary curves - subtle variation only
+    CURVE2_AMPLITUDE_X: 150,
+    CURVE2_AMPLITUDE_Y: 100,
+    CURVE2_PERIOD_X: 200,      // Very long wavelength
+    CURVE2_PERIOD_Y: 160,
     
-    // Loop-de-loop parameters
-    LOOP_AMPLITUDE: 350,       // Size of loops
-    LOOP_PERIOD: 60,           // Words between loop sections
-    LOOP_TIGHTNESS: 8,         // Words per loop revolution - tight!
-    LOOP_VERTICAL_SCALE: 0.8,  // Make loops slightly elliptical
+    // Loop-de-loop parameters - disabled by default (very subtle if enabled)
+    LOOP_AMPLITUDE: 0,         // Set to 0 to disable loops entirely
+    LOOP_PERIOD: 300,          // Very rare if enabled
+    LOOP_TIGHTNESS: 80,        // 80 words per revolution - extremely gentle
+    LOOP_VERTICAL_SCALE: 0.5,  // Shallow ellipse
     
     CAMERA_LOOK_BEHIND: 2.5,   // Camera sits this many words behind current
     CAMERA_LOOK_AHEAD: 4,      // Camera looks at point this many words ahead of itself
@@ -87,35 +87,47 @@ const rope3d = {
   }
 };
 
-// Roller coaster spline: sweeping curves with loop-de-loops
-// Butter smooth, zero gravity gliding
+// Roller coaster spline: broad sweeping curves, butter smooth
+// Uses smoothstep blending for gentle transitions
 function ropePathPosition(t) {
   const cfg = rope3d.config;
   
-  // Primary curves - big sweeping hills and turns
+  // Smoothstep function for gentler wave shapes
+  // Creates softer peaks and valleys than raw sin()
+  const smoothWave = (theta) => {
+    // Normalize sin to 0-1 range, apply smoothstep, then back to -1 to 1
+    const normalized = (Math.sin(theta) + 1) / 2;
+    // Smoothstep: 3x² - 2x³ creates gentler transitions
+    const smoothed = normalized * normalized * (3 - 2 * normalized);
+    return smoothed * 2 - 1;
+  };
+  
+  // Primary curves - broad, gentle sweeps
   const theta1X = (t / cfg.CURVE_PERIOD_X) * Math.PI * 2;
   const theta1Y = (t / cfg.CURVE_PERIOD_Y) * Math.PI * 2;
   
-  // Secondary curves - adds variety and banking
+  // Secondary curves - very subtle variation
   const theta2X = (t / cfg.CURVE2_PERIOD_X) * Math.PI * 2;
   const theta2Y = (t / cfg.CURVE2_PERIOD_Y) * Math.PI * 2;
   
-  // Base roller coaster track
-  let x = Math.sin(theta1X) * cfg.CURVE_AMPLITUDE_X +
+  // Use smoothed waves for primary motion, raw sin for subtle secondary
+  let x = smoothWave(theta1X) * cfg.CURVE_AMPLITUDE_X +
           Math.sin(theta2X) * cfg.CURVE2_AMPLITUDE_X;
-  let y = Math.sin(theta1Y) * cfg.CURVE_AMPLITUDE_Y +
-          Math.cos(theta2Y) * cfg.CURVE2_AMPLITUDE_Y;  // cos for phase offset
+  let y = smoothWave(theta1Y) * cfg.CURVE_AMPLITUDE_Y +
+          Math.sin(theta2Y + Math.PI / 4) * cfg.CURVE2_AMPLITUDE_Y;  // Phase offset for variety
   
-  // Loop-de-loops: smoothly activated loops
-  const loopPhase = (t / cfg.LOOP_PERIOD) * Math.PI * 2;
-  // Smooth activation: sin^6 gives nice smooth bumps
-  const loopActivation = Math.pow(Math.max(0, Math.sin(loopPhase)), 6);
-  
-  if (loopActivation > 0.001) {
-    const loopT = (t / cfg.LOOP_TIGHTNESS) * Math.PI * 2;
-    // Actual loop: x goes in circle, y goes in circle
-    x += Math.sin(loopT) * cfg.LOOP_AMPLITUDE * loopActivation;
-    y += (Math.cos(loopT) - 1) * cfg.LOOP_AMPLITUDE * cfg.LOOP_VERTICAL_SCALE * loopActivation;
+  // Optional gentle loops (only if LOOP_AMPLITUDE > 0)
+  if (cfg.LOOP_AMPLITUDE > 0) {
+    const loopPhase = (t / cfg.LOOP_PERIOD) * Math.PI * 2;
+    // Very smooth activation using smoothstep of smoothstep
+    const rawActivation = Math.max(0, Math.sin(loopPhase));
+    const loopActivation = rawActivation * rawActivation * rawActivation; // Cubic for extra smoothness
+    
+    if (loopActivation > 0.001) {
+      const loopT = (t / cfg.LOOP_TIGHTNESS) * Math.PI * 2;
+      x += Math.sin(loopT) * cfg.LOOP_AMPLITUDE * loopActivation;
+      y += (Math.cos(loopT) - 1) * cfg.LOOP_AMPLITUDE * cfg.LOOP_VERTICAL_SCALE * loopActivation;
+    }
   }
   
   return {
