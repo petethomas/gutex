@@ -160,6 +160,40 @@ function checkFullscreenSupport() {
 }
 checkFullscreenSupport();
 
+// ========== Pinch-to-Zoom Prevention ==========
+// Prevent iOS Safari pinch-zoom via gesturestart/gesturechange events
+document.addEventListener('gesturestart', function(e) {
+  e.preventDefault();
+}, { passive: false });
+
+document.addEventListener('gesturechange', function(e) {
+  e.preventDefault();
+}, { passive: false });
+
+document.addEventListener('gestureend', function(e) {
+  e.preventDefault();
+}, { passive: false });
+
+// Prevent pinch-zoom via touch events (handles 2+ finger touches)
+let lastTouchCount = 0;
+document.addEventListener('touchstart', function(e) {
+  lastTouchCount = e.touches.length;
+  if (e.touches.length > 1) {
+    e.preventDefault();
+  }
+}, { passive: false });
+
+document.addEventListener('touchmove', function(e) {
+  // Prevent zoom when multiple fingers are touching
+  if (e.touches.length > 1) {
+    e.preventDefault();
+  }
+  // Also prevent if we started with multiple fingers
+  if (lastTouchCount > 1) {
+    e.preventDefault();
+  }
+}, { passive: false });
+
 // Prevent iOS context menu on long-press for interactive elements
 if (isMobile) {
   document.addEventListener('contextmenu', function(e) {

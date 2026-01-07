@@ -384,6 +384,9 @@
       display: flex;
       flex-direction: column;
       transition: background-color 0.3s, color 0.3s, font-family 0.3s;
+      /* Prevent accidental zoom on mobile */
+      touch-action: pan-x pan-y;
+      -webkit-touch-callout: none;
     }
     
     /* Content text sizing - explicit rules for iOS stability */
@@ -440,6 +443,10 @@
       transition: background-color 0.3s, border-color 0.3s;
       flex-wrap: nowrap;
       min-height: 52px;
+      /* Prevent text selection in header UI */
+      user-select: none;
+      -webkit-user-select: none;
+      -webkit-touch-callout: none;
     }
 
     .nav-left {
@@ -1069,6 +1076,8 @@
       margin: 0 auto;
       width: 100%;
       outline: none;
+      /* Prevent text selection while allowing vertical scroll */
+      -webkit-touch-callout: none;
     }
 
     #content { text-align: justify; hyphens: auto; }
@@ -1089,6 +1098,10 @@
       background: var(--bg-primary);
       z-index: 100;
       transition: bottom 0.2s, background-color 0.3s, border-color 0.3s;
+      /* Prevent text selection in footer UI */
+      user-select: none;
+      -webkit-user-select: none;
+      -webkit-touch-callout: none;
     }
 
     .footer-link {
@@ -2374,8 +2387,42 @@
       overscroll-behavior: none;
     }
 
+    /* Prevent pinch-zoom on all overlays and modals */
+    .bookmark-overlay,
+    .search-overlay,
+    .error-overlay,
+    .random-overlay,
+    .end-of-book-overlay,
+    .teleport-modal,
+    .floating-3d-controls,
+    .p2p-panel,
+    .overflow-menu {
+      touch-action: none;
+      user-select: none;
+      -webkit-user-select: none;
+      -webkit-touch-callout: none;
+    }
+
     /* Mobile-specific: hide keyboard shortcuts, fix scrolling, hide fullscreen */
     @media (max-width: 768px), (pointer: coarse) {
+      /* Prevent any zoom gestures on mobile */
+      html, body {
+        touch-action: pan-x pan-y;
+      }
+
+      /* Main content area - allow vertical scroll only, prevent zoom */
+      main {
+        touch-action: pan-y;
+        user-select: none;
+        -webkit-user-select: none;
+      }
+
+      /* Allow text selection only in the content div */
+      #content {
+        user-select: text;
+        -webkit-user-select: text;
+      }
+
       /* Hide keyboard shortcuts in footer - not relevant on touch */
       .footer-keyboard-hints {
         display: none !important;
@@ -2483,6 +2530,11 @@
       z-index: 50;
       display: none;
       cursor: grab;
+      /* Prevent zoom, pan, and selection on canvas */
+      touch-action: none;
+      user-select: none;
+      -webkit-user-select: none;
+      -webkit-touch-callout: none;
     }
     .canvas-3d:active { cursor: grabbing; }
     .canvas-3d.visible { display: block; }
