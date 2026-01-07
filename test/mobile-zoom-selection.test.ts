@@ -100,7 +100,8 @@ describe('CSS user-select properties', () => {
 
   it('canvas-3d should have -webkit-user-select: none', () => {
     const canvas3dMatch = cssContent.match(/\.canvas-3d\s*\{[^}]+\}/);
-    assert.ok(canvas3dMatch[0].includes('-webkit-user-select: none'), 
+    assert.ok(canvas3dMatch, 'canvas-3d CSS rule should exist');
+    assert.ok(canvas3dMatch![0].includes('-webkit-user-select: none'), 
       'canvas-3d should have -webkit-user-select: none for Safari');
   });
 
@@ -146,7 +147,8 @@ describe('CSS webkit-touch-callout properties', () => {
 
   it('canvas-3d should have -webkit-touch-callout: none', () => {
     const canvas3dMatch = cssContent.match(/\.canvas-3d\s*\{[^}]+\}/);
-    assert.ok(canvas3dMatch[0].includes('-webkit-touch-callout: none'), 
+    assert.ok(canvas3dMatch, 'canvas-3d CSS rule should exist');
+    assert.ok(canvas3dMatch![0].includes('-webkit-touch-callout: none'), 
       'canvas-3d should have -webkit-touch-callout: none');
   });
 
