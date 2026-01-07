@@ -131,7 +131,7 @@ function initP2PSignaling() {
       const message = JSON.parse(event.data);
       handleP2PMessage(message);
     } catch (err) {
-      p2pLog('p2p_error', 'Failed to parse message');
+      p2pLog('p2p_error', `Message handling error: ${err.message || 'Unknown'}`);
     }
   };
   } catch (err) {
@@ -264,20 +264,27 @@ function updatePeerList(peers) {
     item.className = 'p2p-peer-item';
     
     const isYou = peerId === p2p.peerId;
+    const isHidden = p2p.hiddenPeers.has(peerId);
     
     let badges = '';
     if (isYou) badges += '<span class="peer-badge you">You</span>';
     
-    // Hide button to close this peer's PIP
-    const hideBtn = !isYou && p2p.streams.has(peerId) ? 
-      `<button class="hide-btn" data-peer-id="${peerId}" style="padding:2px 8px;font-size:10px;background:#f0f0f0;border:1px solid #ccc;border-radius:3px;cursor:pointer;">Hide</button>` : '';
+    // Show Hide button for visible peers, Show button for hidden peers
+    let actionBtn = '';
+    if (!isYou) {
+      if (isHidden) {
+        actionBtn = `<button class="show-btn" data-peer-id="${peerId}" style="padding:2px 8px;font-size:10px;background:#e8f5e9;border:1px solid #4caf50;border-radius:3px;cursor:pointer;color:#2e7d32;">Show</button>`;
+      } else if (p2p.streams.has(peerId)) {
+        actionBtn = `<button class="hide-btn" data-peer-id="${peerId}" style="padding:2px 8px;font-size:10px;background:#f0f0f0;border:1px solid #ccc;border-radius:3px;cursor:pointer;">Hide</button>`;
+      }
+    }
     
     item.innerHTML = `
       <div class="peer-info">
-        <span>${escapeHtml(peer.displayName)}</span>
+        <span>${escapeHtml(peer.displayName)}${isHidden ? ' <span style="color:#888;font-size:10px;">(hidden)</span>' : ''}</span>
         ${badges}
       </div>
-      ${hideBtn}
+      ${actionBtn}
     `;
     
     listEl.appendChild(item);
@@ -287,8 +294,19 @@ function updatePeerList(peers) {
   listEl.querySelectorAll('.hide-btn').forEach(btn => {
     btn.addEventListener('click', () => {
       const peerId = btn.dataset.peerId;
+      p2p.hiddenPeers.add(peerId);  // Mark peer as hidden so PIP won't be recreated
       removeStreamPIP(peerId);
-      btn.remove();
+      updatePeerList(Array.from(p2p.peers.values()));  // Refresh to show Show button
+    });
+  });
+  
+  // Add show button handlers to unhide peers
+  listEl.querySelectorAll('.show-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const peerId = btn.dataset.peerId;
+      p2p.hiddenPeers.delete(peerId);  // Remove from hidden set
+      createStreamPIP(peerId);  // Create the PIP immediately
+      updatePeerList(Array.from(p2p.peers.values()));  // Refresh to show Hide button
     });
   });
 }
@@ -727,8 +745,7 @@ function updateStreamPIP(peerId, streamState) {
       displayText = streamState.visibleWords.join(' ');
     }
     
-    if (!displayText && !streamState.bookTitle) return;
-    
+    // Always update content - show waiting message if nothing else to display
     contentEl.innerHTML = bookInfo + (displayText ? `<div style="padding:0 8px;">${processItalics(displayText)}</div>` : '<em style="color:#666;padding:0 8px;">Waiting for content...</em>');
   }
 }
