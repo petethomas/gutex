@@ -344,19 +344,60 @@ function shareState() {
     timestamp: Date.now()
   };
   
-  // In 3D mode, include visible words
+  // In 3D mode, compute and send projected word positions for accurate PIP mirroring
   if (rope3d.active && rope3d.allWords.length > 0) {
     const cfg = rope3d.config;
+    const W = window.innerWidth;
+    const H = window.innerHeight;
+    
+    // Compute camera frame exactly as in renderRopeFrame
+    const camFrame = computeCameraFrame(rope3d.wordOffset);
+    
+    // Determine visible word range
     const visibleWordCount = Math.ceil(cfg.FAR_CLIP / cfg.WORD_SPACING) + 5;
     const startWord = Math.max(0, Math.floor(rope3d.wordOffset) - 3);
     const endWord = Math.min(rope3d.allWords.length - 1, startWord + visibleWordCount);
     
-    const visibleWords = [];
-    for (let i = startWord; i <= endWord && visibleWords.length < 50; i++) {
-      if (rope3d.allWords[i]) visibleWords.push(rope3d.allWords[i]);
+    // Collect projected words with normalized coordinates
+    const projectedWords = [];
+    for (let i = startWord; i <= endWord && projectedWords.length < 60; i++) {
+      const word = rope3d.allWords[i];
+      if (!word || word.trim() === '') continue;
+      
+      const worldPos = ropePathPosition(i);
+      const proj = projectToCameraSpace(worldPos, camFrame, W, H);
+      
+      if (!proj) continue;
+      if (proj.depth < cfg.NEAR_CLIP || proj.depth > cfg.FAR_CLIP) continue;
+      if (proj.screenX < -200 || proj.screenX > W + 200) continue;
+      if (proj.screenY < -200 || proj.screenY > H + 200) continue;
+      
+      const opacity = ropeOpacity(proj.depth);
+      if (opacity < 0.02) continue;
+      
+      const fontSize = Math.max(cfg.MIN_FONT_SIZE, cfg.BASE_FONT_SIZE * proj.scale);
+      if (fontSize < 5) continue;
+      
+      // Normalize coordinates to 0-1 range for scaling to any canvas size
+      projectedWords.push({
+        word,
+        x: proj.screenX / W,
+        y: proj.screenY / H,
+        scale: proj.scale,
+        opacity,
+        depth: proj.depth,
+        isItalic: rope3d.wordItalicMap[i] || false
+      });
     }
-    streamState.visibleWords = visibleWords;
+    
+    // Sort by depth (far to near) for correct layering
+    projectedWords.sort((a, b) => b.depth - a.depth);
+    
+    streamState.projectedWords = projectedWords;
+    streamState.showConnector = cfg.SHOW_CONNECTOR;
     streamState.wordOffset = rope3d.wordOffset;
+    // Also include simple word list for fallback
+    streamState.visibleWords = projectedWords.map(pw => pw.word);
   } else {
     // 2D mode - get current text (full viewport content, no truncation)
     // Use innerHTML and replace br tags to avoid word concatenation
@@ -618,7 +659,7 @@ function removeStreamPIP(peerId) {
   }
 }
 
-function renderPIP3DCanvas(peerId, words) {
+function renderPIP3DCanvas(peerId, streamState) {
   const pip = p2p.streams.get(peerId);
   if (!pip) return;
   
@@ -628,55 +669,104 @@ function renderPIP3DCanvas(peerId, words) {
   const ctx = canvas.getContext('2d');
   
   // Get or create state
-  let state = pipCanvasState.get(peerId);
-  if (!state) {
-    state = { animationId: null, words: [] };
-    pipCanvasState.set(peerId, state);
+  let canvasState = pipCanvasState.get(peerId);
+  if (!canvasState) {
+    canvasState = { animationId: null, streamState: null };
+    pipCanvasState.set(peerId, canvasState);
   }
   
-  // Update words
-  state.words = words;
+  // Update stream state
+  canvasState.streamState = streamState;
   
   // If animation not running, start it
-  if (!state.animationId) {
+  if (!canvasState.animationId) {
     function animate() {
-      state.animationId = requestAnimationFrame(animate);
+      canvasState.animationId = requestAnimationFrame(animate);
+      
+      const ss = canvasState.streamState;
+      if (!ss) return;
       
       // Read dimensions each frame (may change on resize)
       const width = canvas.width;
       const height = canvas.height;
       
-      // Clear
+      // Clear with dark background
       ctx.fillStyle = '#0a0a0a';
       ctx.fillRect(0, 0, width, height);
       
-      // Render words with perspective depth effect
-      const centerX = width / 2;
-      const centerY = height * 0.3;  // Start higher up in the canvas
-      const spacing = 1.5;
-      const vanishingPointZ = 20;
-      
-      // Scale font size based on canvas height
-      const baseFont = Math.max(24, height * 0.16);
-      
-      state.words.forEach((word, i) => {
-        // Z position (depth) - first word is closest
-        const z = i * spacing + 0.5;
+      // Use projected words if available (accurate 3D mirroring)
+      if (ss.projectedWords && ss.projectedWords.length > 0) {
+        // Scale factor for font size based on canvas vs source viewport
+        // Assume source viewport is roughly 1920x1080, adjust based on canvas size
+        const scaleFactor = Math.min(width / 1920, height / 1080);
+        const baseFont = 42; // Same as rope3d.config.BASE_FONT_SIZE
         
-        // Perspective projection
-        const scale = vanishingPointZ / (vanishingPointZ + z);
-        const y = centerY + (z * height * 0.027 * scale);
+        // Draw connector line if enabled
+        if (ss.showConnector && ss.projectedWords.length > 1) {
+          // Sort by original order for connector drawing
+          const sortedByDepth = [...ss.projectedWords];
+          ctx.beginPath();
+          ctx.strokeStyle = `rgba(200, 200, 200, 0.45)`;
+          ctx.lineWidth = 1;
+          
+          let started = false;
+          for (const pw of sortedByDepth) {
+            const sx = pw.x * width;
+            const sy = pw.y * height;
+            if (!started) {
+              ctx.moveTo(sx, sy);
+              started = true;
+            } else {
+              ctx.lineTo(sx, sy);
+            }
+          }
+          ctx.stroke();
+        }
         
-        // Size and opacity based on depth
-        const fontSize = Math.max(8, baseFont * scale);
-        const opacity = Math.max(0.1, Math.min(1, 1 - z / 15));
+        // Render words (already sorted far-to-near)
+        for (const pw of ss.projectedWords) {
+          const sx = pw.x * width;
+          const sy = pw.y * height;
+          const fontSize = Math.max(6, baseFont * pw.scale * scaleFactor);
+          
+          if (fontSize < 4) continue;
+          
+          ctx.save();
+          ctx.translate(sx, sy);
+          
+          const fontStyle = pw.isItalic ? 'italic ' : '';
+          ctx.font = `${fontStyle}${Math.round(fontSize)}px Georgia, serif`;
+          ctx.textAlign = 'center';
+          ctx.textBaseline = 'middle';
+          
+          // Fade text based on depth (opacity already computed)
+          ctx.fillStyle = `rgba(255, 255, 255, ${pw.opacity})`;
+          ctx.fillText(pw.word, 0, 0);
+          
+          ctx.restore();
+        }
+      } else if (ss.visibleWords && ss.visibleWords.length > 0) {
+        // Fallback: simple depth effect (legacy behavior)
+        const centerX = width / 2;
+        const centerY = height * 0.3;
+        const spacing = 1.5;
+        const vanishingPointZ = 20;
+        const baseFont = Math.max(24, height * 0.16);
         
-        ctx.font = `${fontSize}px Georgia, serif`;
-        ctx.textAlign = 'center';
-        ctx.textBaseline = 'middle';
-        ctx.fillStyle = `rgba(255, 255, 255, ${opacity})`;
-        ctx.fillText(word, centerX, y);
-      });
+        ss.visibleWords.forEach((word, i) => {
+          const z = i * spacing + 0.5;
+          const scale = vanishingPointZ / (vanishingPointZ + z);
+          const y = centerY + (z * height * 0.027 * scale);
+          const fontSize = Math.max(8, baseFont * scale);
+          const opacity = Math.max(0.1, Math.min(1, 1 - z / 15));
+          
+          ctx.font = `${fontSize}px Georgia, serif`;
+          ctx.textAlign = 'center';
+          ctx.textBaseline = 'middle';
+          ctx.fillStyle = `rgba(255, 255, 255, ${opacity})`;
+          ctx.fillText(word, centerX, y);
+        });
+      }
     }
     animate();
   }
@@ -716,15 +806,15 @@ function updateStreamPIP(peerId, streamState) {
     ? `<div style="font-size:11px;color:#888;margin-bottom:6px;padding:0 8px;">${escapeHtml(streamState.bookTitle)}${streamState.bookAuthor ? ' · ' + escapeHtml(streamState.bookAuthor) : ''} · ${streamState.percent || '0%'}</div>`
     : '';
   
-  if (is3D && streamState.visibleWords && streamState.visibleWords.length > 0) {
+  if (is3D && (streamState.projectedWords?.length > 0 || streamState.visibleWords?.length > 0)) {
     // 3D mode - show book info + canvas
     contentEl.innerHTML = bookInfo || '<div style="height:20px;"></div>';
     contentEl.style.display = 'block';
     contentEl.style.minHeight = 'auto';
     canvasEl.style.display = 'block';
     
-    // Render words on 2D canvas with depth effect
-    renderPIP3DCanvas(peerId, streamState.visibleWords);
+    // Render 3D view using pre-computed projections (or fallback to simple depth effect)
+    renderPIP3DCanvas(peerId, streamState);
     
   } else {
     // 2D mode - show text content, hide canvas
