@@ -129,7 +129,6 @@ async function goToRandomLocationInSameBook() {
     // Clear history since we jumped
     navHistoryStack.length = 0;
     
-    updateHash(true);
     recordNavigation(); // Log in history
   } catch (err) {
     console.error('Error jumping in same book:', err);

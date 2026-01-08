@@ -46,7 +46,7 @@ function seekToPercent(percent) {
   
   // Debounce the actual navigation
   progressSeekTimeout = setTimeout(() => {
-    initBook(state.bookId, targetByte, state.chunkSize, false).catch(err => {
+    initBook(state.bookId, targetByte, state.chunkSize, false, false).catch(err => {
       console.error('Progress seek navigation failed:', err);
     });
   }, PROGRESS_SEEK_DEBOUNCE);

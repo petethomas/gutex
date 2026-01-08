@@ -118,7 +118,7 @@ function startAutoRead() {
 
   if (chunkSize !== state.chunkSize) {
     state.chunkSize = chunkSize;
-    initBook(state.bookId, state.byteStart, chunkSize, false);
+    initBook(state.bookId, state.byteStart, chunkSize, false, false);
   }
 
   autoRead.intervalId = setInterval(() => {

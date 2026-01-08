@@ -353,7 +353,6 @@ function updateUI(data) {
 
   $('stats').textContent = `${data.totalBytes.toLocaleString()} bytes | ${state.chunkSize}w`;
 
-  updateHash(true); // Force immediate update after navigation
   updateButtonStates();
   syncChunkSizeDropdown();
   updateDocumentTitle();

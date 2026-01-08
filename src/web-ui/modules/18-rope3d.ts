@@ -341,9 +341,6 @@ function toggleRopeMode() {
     }
     
     startRopeAnimation();
-    
-    // Update URL to reflect 3D mode
-    updateHash(true);
   } else {
     document.body.classList.remove('mode-3d');
     rope3d.canvas.classList.remove('visible');
@@ -377,13 +374,12 @@ function toggleRopeMode() {
   }
 }
 
-// Sync rope position to state for URL update
+// Sync rope position to state (without URL update)
 function updateRopeToState() {
   if (!rope3d.active || rope3d.allWords.length === 0) return;
   
-  // Use tracked viewBytePosition for accurate URL
+  // Use tracked viewBytePosition for accurate state
   state.byteStart = Math.max(0, Math.floor(rope3d.viewBytePosition));
-  updateHash();
 }
 
 // Reload rope with new chunk size
@@ -416,7 +412,6 @@ async function reloadRopeWithChunkSize(newChunkSize) {
       rope3d.bytesPerWord = (data.byteEnd - data.byteStart) / rope3d.allWords.length;
     }
     
-    updateHash(true); // Force after explicit reload
     showHint(`Loaded ${rope3d.allWords.length} words`);
   } catch (err) {
     console.error('Failed to reload rope:', err);

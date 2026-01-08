@@ -417,11 +417,10 @@ $('autoChunkSize').addEventListener('change', (e) => {
         
         if (state.bookId) {
           state.chunkSize = size;
-          updateHash(true);
           if (rope3d.active) {
             reloadRopeWithChunkSize(size);
           } else {
-            initBook(state.bookId, state.byteStart, size, false);
+            initBook(state.bookId, state.byteStart, size, false, false);
           }
         }
       } else {
@@ -441,13 +440,12 @@ $('autoChunkSize').addEventListener('change', (e) => {
     const newChunkSize = parseInt(val, 10);
     if (newChunkSize !== state.chunkSize) {
       state.chunkSize = newChunkSize;
-      updateHash(true);
       
       if (rope3d.active) {
         // In 3D mode: reload rope with new chunk size
         reloadRopeWithChunkSize(newChunkSize);
       } else {
-        initBook(state.bookId, state.byteStart, newChunkSize, false);
+        initBook(state.bookId, state.byteStart, newChunkSize, false, false);
       }
     }
   }
