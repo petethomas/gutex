@@ -361,14 +361,14 @@ function shareState() {
     streamState.visibleWords = visibleWords;
     streamState.wordOffset = rope3d.wordOffset;
   } else {
-    // 2D mode - get current text
+    // 2D mode - get current text (full viewport content, no truncation)
     // Use innerHTML and replace br tags to avoid word concatenation
     const contentHtml = $('content')?.innerHTML || '';
     const contentWithSpaces = contentHtml.replace(/<br\s*\/?>/gi, ' ');
     const temp = document.createElement('div');
     temp.innerHTML = contentWithSpaces;
     const content = temp.textContent || '';
-    streamState.text = content.slice(0, 500);
+    streamState.text = content;
   }
   
   sendP2PMessage({
