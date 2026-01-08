@@ -981,10 +981,13 @@
           
         case 'error':
           console.error('[P2P]', message.payload && message.payload.message);
-          // Clear saved room if it no longer exists (stale room from previous session)
+          // If room not found, recreate it with the saved ID
           if (message.payload && message.payload.message && message.payload.message.includes('not found')) {
-            clearSavedRoom();
-            // Don't show hint - this is expected for stale rooms and auto-recovers
+            var saved = loadSavedRoom();
+            if (saved && saved.roomId) {
+              console.log('[P2P] Room ' + saved.roomId + ' expired, recreating...');
+              createRoomWithId(saved.roomId, saved.displayName);
+            }
           } else {
             showHint(message.payload && message.payload.message || 'P2P Error');
           }
@@ -1063,13 +1066,7 @@
       try {
         var saved = localStorage.getItem(P2P_ROOM_KEY);
         if (!saved) return null;
-        var data = JSON.parse(saved);
-        // Expire after 4 hours
-        if (Date.now() - data.timestamp > 4 * 60 * 60 * 1000) {
-          localStorage.removeItem(P2P_ROOM_KEY);
-          return null;
-        }
-        return data;
+        return JSON.parse(saved);
       } catch (e) {
         return null;
       }
@@ -1129,6 +1126,22 @@
       });
       
       $('p2pPanel').classList.remove('visible');
+    }
+
+    function createRoomWithId(roomId, displayName) {
+      displayName = displayName || $('p2pDisplayName').value.trim() || ('User ' + Math.floor(Math.random() * 1000));
+      p2p.displayName = displayName;
+      
+      sendP2PMessage({
+        type: 'create-room',
+        payload: {
+          roomId: roomId,
+          displayName: displayName,
+          name: displayName + "'s Room"
+        }
+      });
+      
+      console.log('[P2P] Recreating room ' + roomId + ' as "' + displayName + '"');
     }
 
     function joinRoom(roomCode, displayName) {

@@ -165,8 +165,12 @@ export class P2PSignalingServer {
     // Leave any existing room
     this.handleLeaveRoom(peerId);
 
-    const roomId = this.generateRoomId();
-    const payload = message.payload as { name?: string; displayName?: string } | undefined;
+    const payload = message.payload as { name?: string; displayName?: string; roomId?: string } | undefined;
+    // Use provided roomId if valid and not taken, otherwise generate one
+    let roomId = payload?.roomId?.toUpperCase();
+    if (!roomId || roomId.length < 4 || this.rooms.has(roomId)) {
+      roomId = this.generateRoomId();
+    }
     const roomName = payload?.name || `Room ${roomId}`;
     const displayName = payload?.displayName || `User ${peerId.slice(0, 4)}`;
 
