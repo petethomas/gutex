@@ -1080,7 +1080,17 @@
       -webkit-touch-callout: none;
     }
 
-    #content { text-align: justify; hyphens: auto; }
+    /* Mobile: ensure right margin is respected */
+    @media (max-width: 768px) {
+      main {
+        padding-left: 16px;
+        padding-right: 16px;
+        max-width: 100%;
+        box-sizing: border-box;
+      }
+    }
+
+    #content { text-align: justify; hyphens: auto; overflow-wrap: break-word; word-wrap: break-word; word-break: break-word; }
     #content.loading { color: var(--text-faint); text-align: center; font-style: italic; }
     #content.error { color: var(--danger-text); text-align: center; }
 
@@ -1112,6 +1122,23 @@
     .footer-link:hover {
       color: var(--accent-color);
       text-decoration: underline;
+    }
+
+    /* Clickable location display in footer */
+    .footer-location {
+      cursor: pointer;
+      padding: 2px 6px;
+      border-radius: 3px;
+      transition: background-color 0.15s, color 0.15s;
+      font-variant-numeric: tabular-nums;
+    }
+    .footer-location:hover {
+      background: var(--bg-secondary);
+      color: var(--text-primary);
+    }
+    .footer-location.copied {
+      background: var(--success-bg);
+      color: var(--success-text);
     }
 
     /* Move footer up when debug panel is open */
@@ -2200,6 +2227,32 @@
       max-height: 200px;
       overflow-y: auto;
     }
+    .p2p-stream-pip .pip-footer {
+      padding: 4px 10px;
+      background: rgba(255,255,255,0.05);
+      border-top: 1px solid rgba(255,255,255,0.1);
+      display: flex;
+      justify-content: flex-end;
+      align-items: center;
+      font-family: monospace;
+      font-size: 10px;
+    }
+    .p2p-stream-pip .pip-location {
+      color: #888;
+      cursor: pointer;
+      padding: 2px 6px;
+      border-radius: 3px;
+      transition: background-color 0.15s, color 0.15s;
+      font-variant-numeric: tabular-nums;
+    }
+    .p2p-stream-pip .pip-location:hover {
+      background: rgba(255,255,255,0.1);
+      color: #fff;
+    }
+    .p2p-stream-pip .pip-location.copied {
+      background: rgba(74, 222, 128, 0.3);
+      color: #4ade80;
+    }
     .p2p-stream-pip canvas {
       display: block;
       width: 100%;
@@ -2212,6 +2265,7 @@
       max-width: 200px;
     }
     .p2p-stream-pip.collapsed .pip-content,
+    .p2p-stream-pip.collapsed .pip-footer,
     .p2p-stream-pip.collapsed canvas {
       display: none !important;
     }

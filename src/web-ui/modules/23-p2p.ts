@@ -522,7 +522,50 @@ function createStreamPIP(peerId) {
       <div style="color:#888;font-style:italic;">Waiting for stream...</div>
     </div>
     <canvas id="pip-canvas-${peerId}" width="640" height="300" style="display:none;width:100%;height:150px;background:#0a0a0a;border-radius:0 0 8px 8px;"></canvas>
+    <div class="pip-footer">
+      <span class="pip-location" id="pip-location-${peerId}" title="Click to copy location">—</span>
+    </div>
   `;
+  
+  container.appendChild(pip);
+  p2p.streams.set(peerId, pip);
+  
+  // Add location click-to-copy handler
+  const locationEl = pip.querySelector(`#pip-location-${peerId}`);
+  if (locationEl) {
+    locationEl.addEventListener('click', () => {
+      const location = locationEl.dataset.location;
+      if (!location) return;
+      
+      navigator.clipboard.writeText(location).then(() => {
+        locationEl.classList.add('copied');
+        const originalText = locationEl.textContent;
+        locationEl.textContent = 'Copied!';
+        setTimeout(() => {
+          locationEl.classList.remove('copied');
+          locationEl.textContent = originalText;
+        }, 1500);
+      }).catch(() => {
+        // Fallback
+        const textarea = document.createElement('textarea');
+        textarea.value = location;
+        textarea.style.position = 'fixed';
+        textarea.style.opacity = '0';
+        document.body.appendChild(textarea);
+        textarea.select();
+        document.execCommand('copy');
+        document.body.removeChild(textarea);
+        
+        locationEl.classList.add('copied');
+        const originalText = locationEl.textContent;
+        locationEl.textContent = 'Copied!';
+        setTimeout(() => {
+          locationEl.classList.remove('copied');
+          locationEl.textContent = originalText;
+        }, 1500);
+      });
+    });
+  }
   
   container.appendChild(pip);
   p2p.streams.set(peerId, pip);
@@ -788,6 +831,7 @@ function updateStreamPIP(peerId, streamState) {
   const contentEl = pip.querySelector(`#pip-content-${peerId}`);
   const canvasEl = pip.querySelector(`#pip-canvas-${peerId}`);
   const modeEl = pip.querySelector(`#pip-mode-${peerId}`);
+  const locationEl = pip.querySelector(`#pip-location-${peerId}`);
   if (!contentEl || !canvasEl) return;
   
   const is3D = streamState.mode === '3d';
@@ -799,6 +843,17 @@ function updateStreamPIP(peerId, streamState) {
   if (modeEl) {
     modeEl.textContent = is3D ? '3D' : '2D';
     modeEl.style.color = is3D ? '#4a9' : '#888';
+  }
+  
+  // Update location in footer with full URL
+  if (locationEl && streamState.byteStart !== undefined && streamState.bookId) {
+    const chunkSize = streamState.chunkSize || 200;
+    const is3dMode = streamState.mode === '3d';
+    const hash = `#${streamState.bookId},${streamState.byteStart},${chunkSize}${is3dMode ? ',3d' : ''}`;
+    const fullUrl = window.location.origin + '/read' + hash;
+    locationEl.textContent = Number(streamState.byteStart).toLocaleString();
+    locationEl.dataset.location = fullUrl;
+    locationEl.title = `Click to copy URL for this location`;
   }
   
   // Book info line (shown in both modes)

@@ -352,6 +352,9 @@ function updateUI(data) {
   $('content').innerHTML = processItalics(displayText).replace(/\n\n/g, '<br><br>');
 
   $('stats').textContent = `${data.totalBytes.toLocaleString()} bytes | ${state.chunkSize}w`;
+  
+  // Update footer location display
+  updateFooterLocation();
 
   updateButtonStates();
   syncChunkSizeDropdown();
@@ -368,6 +371,63 @@ function updateUI(data) {
   
   // Record in navigation history
   recordNavigation();
+}
+
+// Update the footer location display with current byte position
+function updateFooterLocation() {
+  const locationEl = $('footerLocation');
+  if (locationEl && state.byteStart !== undefined) {
+    locationEl.textContent = state.byteStart.toLocaleString();
+    locationEl.title = `Click to copy URL for this location`;
+  }
+}
+
+// Build fully qualified URL for current location
+function buildLocationUrl() {
+  const hash = buildHash(state.bookId, state.byteStart, state.chunkSize, rope3d.active);
+  return window.location.origin + window.location.pathname + hash;
+}
+
+// Copy location URL to clipboard when clicked
+function copyFooterLocation() {
+  const locationEl = $('footerLocation');
+  if (!locationEl || state.byteStart === undefined || !state.bookId) return;
+  
+  const url = buildLocationUrl();
+  
+  navigator.clipboard.writeText(url).then(() => {
+    locationEl.classList.add('copied');
+    const originalText = locationEl.textContent;
+    locationEl.textContent = 'Copied!';
+    setTimeout(() => {
+      locationEl.classList.remove('copied');
+      locationEl.textContent = originalText;
+    }, 1500);
+  }).catch(() => {
+    // Fallback for browsers without clipboard API
+    const textarea = document.createElement('textarea');
+    textarea.value = url;
+    textarea.style.position = 'fixed';
+    textarea.style.opacity = '0';
+    document.body.appendChild(textarea);
+    textarea.select();
+    document.execCommand('copy');
+    document.body.removeChild(textarea);
+    
+    locationEl.classList.add('copied');
+    const originalText = locationEl.textContent;
+    locationEl.textContent = 'Copied!';
+    setTimeout(() => {
+      locationEl.classList.remove('copied');
+      locationEl.textContent = originalText;
+    }, 1500);
+  });
+}
+
+// Initialize footer location click handler
+const footerLocationEl = $('footerLocation');
+if (footerLocationEl) {
+  footerLocationEl.addEventListener('click', copyFooterLocation);
 }
 
 function updateDocumentTitle() {
