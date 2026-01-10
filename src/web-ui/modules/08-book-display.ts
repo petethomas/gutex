@@ -373,10 +373,10 @@ function updateUI(data) {
   recordNavigation();
 }
 
-// Update the footer location display with current byte position
+// Update the footer location display with current position in hash format
 function updateFooterLocation() {
   const locationEl = $('footerLocation');
-  if (!locationEl) return;
+  if (!locationEl || !state.bookId) return;
   
   // In 3D mode, use viewBytePosition for accurate tracking
   const currentPosition = rope3d.active 
@@ -384,8 +384,9 @@ function updateFooterLocation() {
     : state.byteStart;
   
   if (currentPosition !== undefined) {
-    locationEl.textContent = currentPosition.toLocaleString();
-    locationEl.title = `Click to copy URL for this location`;
+    // Display in same format as URL hash: bookId,byteStart,chunkSize
+    locationEl.textContent = `${state.bookId},${currentPosition},${state.chunkSize}`;
+    locationEl.title = `Click to copy URL`;
   }
 }
 
@@ -402,7 +403,13 @@ function buildLocationUrl() {
 // Copy location URL to clipboard when clicked
 function copyFooterLocation() {
   const locationEl = $('footerLocation');
-  if (!locationEl || state.byteStart === undefined || !state.bookId) return;
+  if (!locationEl || !state.bookId) return;
+  
+  // In 3D mode, use viewBytePosition
+  const currentPosition = rope3d.active 
+    ? Math.floor(rope3d.viewBytePosition) 
+    : state.byteStart;
+  if (currentPosition === undefined) return;
   
   const url = buildLocationUrl();
   

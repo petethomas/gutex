@@ -851,9 +851,10 @@ function updateStreamPIP(peerId, streamState) {
     const is3dMode = streamState.mode === '3d';
     const hash = `#${streamState.bookId},${streamState.byteStart},${chunkSize}${is3dMode ? ',3d' : ''}`;
     const fullUrl = window.location.origin + '/read' + hash;
-    locationEl.textContent = Number(streamState.byteStart).toLocaleString();
+    // Display in same format as URL hash: bookId,byteStart,chunkSize
+    locationEl.textContent = `${streamState.bookId},${streamState.byteStart},${chunkSize}`;
     locationEl.dataset.location = fullUrl;
-    locationEl.title = `Click to copy URL for this location`;
+    locationEl.title = `Click to copy URL`;
   }
   
   // Book info line (shown in both modes)
