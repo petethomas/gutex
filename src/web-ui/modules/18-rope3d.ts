@@ -834,6 +834,9 @@ function renderRopeFrame(time) {
   const percent = totalBytes > 0 ? Math.min(100, (bytesFromStart / totalBytes) * 100).toFixed(1) : 0;
   $('percent').textContent = `${percent}%`;
   $('progress').style.width = `${percent}%`;
+  
+  // Update footer location display (throttled to avoid excessive updates)
+  updateFooterLocation();
 }
 
 // Draw connector line between words - the "strand"

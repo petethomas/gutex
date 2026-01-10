@@ -376,15 +376,26 @@ function updateUI(data) {
 // Update the footer location display with current byte position
 function updateFooterLocation() {
   const locationEl = $('footerLocation');
-  if (locationEl && state.byteStart !== undefined) {
-    locationEl.textContent = state.byteStart.toLocaleString();
+  if (!locationEl) return;
+  
+  // In 3D mode, use viewBytePosition for accurate tracking
+  const currentPosition = rope3d.active 
+    ? Math.floor(rope3d.viewBytePosition) 
+    : state.byteStart;
+  
+  if (currentPosition !== undefined) {
+    locationEl.textContent = currentPosition.toLocaleString();
     locationEl.title = `Click to copy URL for this location`;
   }
 }
 
 // Build fully qualified URL for current location
 function buildLocationUrl() {
-  const hash = buildHash(state.bookId, state.byteStart, state.chunkSize, rope3d.active);
+  // In 3D mode, use viewBytePosition for accurate position
+  const currentPosition = rope3d.active 
+    ? Math.floor(rope3d.viewBytePosition) 
+    : state.byteStart;
+  const hash = buildHash(state.bookId, currentPosition, state.chunkSize, rope3d.active);
   return window.location.origin + window.location.pathname + hash;
 }
 
