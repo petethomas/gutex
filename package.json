@@ -1,6 +1,6 @@
 {
   "name": "gutex",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "type": "module",
   "description": "Explore text at Project Gutenberg",
   "main": "dist/src/gutex.js",
@@ -10,9 +10,9 @@
     "gutex-web": "./dist/src/gutex-web.js"
   },
   "scripts": {
-    "build": "npx tsc && node src/web-ui/build-web-ui.js && cp src/web-landing.html dist/src/",
-    "build:prod": "npx tsc && node src/web-ui/build-web-ui.js --production && cp src/web-landing.html dist/src/",
-    "build:dev": "npx tsc && node src/web-ui/build-web-ui.js && cp src/web-landing.html dist/src/",
+    "build": "npx tsc && node src/web-ui/build-web-ui.js && node src/web-landing/build-web-landing.js",
+    "build:prod": "npx tsc && node src/web-ui/build-web-ui.js --production && node src/web-landing/build-web-landing.js",
+    "build:dev": "npx tsc && node src/web-ui/build-web-ui.js && node src/web-landing/build-web-landing.js",
     "cli": "node dist/src/gutex.js",
     "core": "node dist/src/gutex-core.js",
     "web": "node dist/src/gutex-web.js",
@@ -42,6 +42,6 @@
     "typescript": "^5.0.0"
   },
   "dependencies": {
-    "ws": "^8.18.3"
+    "ws": "^8.19.0"
   }
 }

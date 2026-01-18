@@ -295,7 +295,7 @@ describe('MirrorManager', () => {
       const { fileURLToPath } = await import('url');
       
       const __dirname = path.dirname(fileURLToPath(import.meta.url));
-      const mirrorsPath = path.join(__dirname, '..', 'MIRRORS.ALL');
+      const mirrorsPath = path.join(__dirname, '..', '..', 'MIRRORS.ALL');
       
       let content: string;
       try {

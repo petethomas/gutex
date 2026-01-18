@@ -20,7 +20,7 @@ describe('UI Robustness - web-ui.html', () => {
   let htmlContent: string;
   
   before(() => {
-    const htmlPath = path.join(__dirname, '../src/web-ui.html');
+    const htmlPath = path.join(__dirname, '../../src/web-ui.html');
     htmlContent = fs.readFileSync(htmlPath, 'utf8');
   });
   

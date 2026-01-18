@@ -567,7 +567,7 @@ describe('Rope 3D - Server-side Rendering', () => {
 
 describe('Canvas UI - Integration Tests', () => {
   it('should have word-based 3D mode in web-ui.html', async () => {
-    const htmlPath = path.join(__dirname, '../src/web-ui.html');
+    const htmlPath = path.join(__dirname, '../../src/web-ui.html');
     assert.ok(fs.existsSync(htmlPath), 'web-ui.html should exist');
     
     const content = fs.readFileSync(htmlPath, 'utf8');
@@ -605,7 +605,7 @@ describe('3D Mode - Navigation Speed', () => {
   let htmlContent: string;
   
   before(() => {
-    const htmlPath = path.join(__dirname, '../src/web-ui.html');
+    const htmlPath = path.join(__dirname, '../../src/web-ui.html');
     htmlContent = fs.readFileSync(htmlPath, 'utf8');
   });
   
@@ -650,7 +650,7 @@ describe('Teleportation - Core Behavior', () => {
     let htmlContent: string;
     
     before(() => {
-      const htmlPath = path.join(__dirname, '../src/web-ui.html');
+      const htmlPath = path.join(__dirname, '../../src/web-ui.html');
       htmlContent = fs.readFileSync(htmlPath, 'utf8');
     });
     
@@ -851,7 +851,7 @@ describe('3D Mode - Chunk Size', () => {
   let htmlContent: string;
   
   before(() => {
-    const htmlPath = path.join(__dirname, '../src/web-ui.html');
+    const htmlPath = path.join(__dirname, '../../src/web-ui.html');
     htmlContent = fs.readFileSync(htmlPath, 'utf8');
   });
   
@@ -883,7 +883,7 @@ describe('3D Mode - Position Tracking', () => {
   let htmlContent: string;
   
   before(() => {
-    const htmlPath = path.join(__dirname, '../src/web-ui.html');
+    const htmlPath = path.join(__dirname, '../../src/web-ui.html');
     htmlContent = fs.readFileSync(htmlPath, 'utf8');
   });
   
@@ -920,7 +920,7 @@ describe('3D Mode - Boundary Detection and Teleportation', () => {
   let htmlContent: string;
   
   before(() => {
-    const htmlPath = path.join(__dirname, '../src/web-ui.html');
+    const htmlPath = path.join(__dirname, '../../src/web-ui.html');
     htmlContent = fs.readFileSync(htmlPath, 'utf8');
   });
   
@@ -968,7 +968,7 @@ describe('Teleport Visual Feedback', () => {
   let htmlContent: string;
   
   before(() => {
-    const htmlPath = path.join(__dirname, '../src/web-ui.html');
+    const htmlPath = path.join(__dirname, '../../src/web-ui.html');
     htmlContent = fs.readFileSync(htmlPath, 'utf8');
   });
   
@@ -1025,7 +1025,7 @@ describe('2D Mode - Backward Navigation', () => {
   let htmlContent: string;
   
   before(() => {
-    const htmlPath = path.join(__dirname, '../src/web-ui.html');
+    const htmlPath = path.join(__dirname, '../../src/web-ui.html');
     htmlContent = fs.readFileSync(htmlPath, 'utf8');
   });
   
@@ -1057,7 +1057,7 @@ describe('Hash Update Management', () => {
   let htmlContent: string;
   
   before(() => {
-    const htmlPath = path.join(__dirname, '../src/web-ui.html');
+    const htmlPath = path.join(__dirname, '../../src/web-ui.html');
     htmlContent = fs.readFileSync(htmlPath, 'utf8');
   });
   

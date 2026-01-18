@@ -38,6 +38,23 @@ Click :black_nib: or press `c` to open the current passage in a new tab. Shows:
 - Author and title attribution
 - `curl` command to fetch the exact bytes from Gutenberg
 
+### Fulltext Search
+
+Search within a book for specific passages:
+
+1. Open a book and click the search icon or use the fulltext search option
+2. Enter a phrase of **4 or more words** (required for network efficiency)
+3. Results show matches with surrounding context
+4. Click any result to jump to that position
+
+**Excerpt Builder:** Click ✂️ on any search result to fine-tune the selection:
+- Use `−word` / `+word` buttons to adjust start and end boundaries
+- Preview updates live to show exactly what will be excerpted
+- "Open Excerpt" opens in a new tab with the precise text
+- "Copy Link" copies a shareable URL
+
+The search uses byte-range requests to avoid downloading entire books. Files under 50KB download fully (faster); larger files stream in adaptive chunks starting at 16KB.
+
 ### Bookmarks
 
 Press `b` or click :bookmark: to open the bookmarks panel with two tabs:
@@ -238,10 +255,12 @@ Examples:
 | Endpoint | Description |
 |----------|-------------|
 | `GET /api/search?q=query` | Search catalog |
+| `GET /api/textsearch/:id?q=phrase&fuzzy=bool&max=N` | Fulltext search within book |
 | `GET /api/random` | Random book (verified to have text) |
 | `GET /api/bookinfo/:id` | Title and author |
 | `GET /api/book/:id/init?chunkSize=200` | Initialize book, get first chunk |
 | `GET /api/book/:id/chunk?byteStart=N&chunkSize=200` | Get chunk at position |
+| `GET /api/book/:id/chunk?byteStart=N&chunkSize=200&exact=1` | Get exact bytes (no word alignment) |
 | `GET /api/bookmarks` | List all bookmarks |
 | `POST /api/bookmarks` | Save bookmark `{name, info}` |
 | `DELETE /api/bookmarks/:name` | Delete bookmark |
@@ -287,6 +306,7 @@ src/
   keyboard.ts      CLI key handling
   mirror-manager.ts  Parallel racing, health tracking, fallback
   navigator.ts     Chunk fetching, caching, word extraction, history
+  network-search.ts  Fulltext search (KMP, Bitap, adaptive chunking)
   p2p-signaling.ts WebSocket relay for reading rooms
   snapshot-runner.ts  --snapshot mode
   sparse-cache.ts  Content boundary caching
@@ -390,7 +410,7 @@ Camera mode renders text along a curve line.
 npm test
 ```
 
-700+ tests covering navigation, caching, UI behavior, UTF-8 safety, P2P signaling, more. Some tests hit gutenberg.org.
+780+ tests covering navigation, caching, UI behavior, UTF-8 safety, P2P signaling, fulltext search algorithms, and more. Some tests hit gutenberg.org.
 
 ## Some eBook IDs
 

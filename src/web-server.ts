@@ -18,6 +18,7 @@ import { CatalogManager } from './catalog-manager.js';
 import { getSharedMirrorManager } from './mirror-manager.js';
 import { P2PSignalingServer } from './p2p-signaling.js';
 import { saveBookmark, loadBookmark, listBookmarks, deleteBookmark } from './bookmarks.js';
+import { NetworkSearcher } from './network-search.js';
 import { saveLastPosition, loadLastPosition, clearLastPosition } from './last-position.js';
 import type {
   WebServerOptions,
@@ -319,6 +320,72 @@ export class WebServer {
       return true;
     }
 
+    // GET /api/textsearch/:bookId?q=phrase&fuzzy=true
+    // Network-efficient fulltext search within a book
+    if (pathParts[1] === 'textsearch' && pathParts[2]) {
+      const bookId = parseInt(pathParts[2], 10);
+      const phrase = url.searchParams.get('q');
+      const fuzzy = url.searchParams.get('fuzzy') === 'true';
+      const maxResults = parseInt(url.searchParams.get('max') || '50', 10);
+      
+      if (isNaN(bookId)) {
+        this.sendJson(res, 400, { error: 'Invalid book ID' });
+        return true;
+      }
+      
+      if (!phrase) {
+        this.sendJson(res, 400, { error: 'Missing search phrase (q parameter)' });
+        return true;
+      }
+      
+      try {
+        const searcher = new NetworkSearcher(this.debug);
+        
+        // Validate phrase (must be 4+ words)
+        const validation = searcher.validatePhrase(phrase);
+        if (!validation.valid) {
+          this.sendJson(res, 400, { error: validation.error });
+          return true;
+        }
+        
+        // Build URL for the book
+        const bookUrl = `https://www.gutenberg.org/cache/epub/${bookId}/pg${bookId}.txt`;
+        
+        // Create cached range fetcher if SparseCache is available
+        const rangeFetcher = this.sparseCache 
+          ? (start: number, end: number) => this.sparseCache!.getRange(bookId, start, end)
+          : undefined;
+        
+        const startTime = Date.now();
+        const result = await searcher.search(bookUrl, phrase, {
+          fuzzy,
+          maxMatches: Math.min(maxResults, 100),
+          maxEditDistance: fuzzy ? 2 : 0,
+          contextSize: 150,
+          debug: this.debug,
+          rangeFetcher
+        });
+        
+        this.logEvent('textsearch', 
+          `book=${bookId} phrase="${phrase.slice(0, 30)}..." fuzzy=${fuzzy} ` +
+          `matches=${result.matches.length} bytes=${result.bytesDownloaded} ` +
+          `chunks=${result.chunksRequested} strategy=${result.strategy}`,
+          Date.now() - startTime
+        );
+        
+        this.sendJson(res, 200, {
+          bookId,
+          phrase,
+          fuzzy,
+          ...result
+        });
+      } catch (err) {
+        this.logError(`textsearch book ${bookId}`, err as Error);
+        this.sendJson(res, 500, { error: (err as Error).message });
+      }
+      return true;
+    }
+
     // GET /api/random
     if (pathParts[1] === 'random') {
       const languageFilter = url.searchParams.get('lang') || 'en';
@@ -613,6 +680,26 @@ export class WebServer {
         }
 
         const chunkSize = parseInt(url.searchParams.get('chunkSize') || '', 10) || this.chunkSize;
+        const exact = url.searchParams.get('exact') === '1';
+        
+        // Exact mode: return raw bytes without word alignment (for excerpts)
+        if (exact) {
+          const fetcher = new Fetcher(bookId, false, { mirrorManager: this.mirrorManager });
+          const rawBytes = await fetcher.fetchRange(byteStart, byteStart + chunkSize - 1);
+          const text = rawBytes.toString('utf-8');
+          
+          this.logEvent('chunk-exact', `book ${bookId} @${byteStart}, ${chunkSize}B`, Date.now() - startTime);
+          
+          this.sendJson(res, 200, {
+            bookId,
+            byteStart,
+            byteEnd: byteStart + rawBytes.length - 1,
+            text,
+            exact: true
+          });
+          return true;
+        }
+        
         const originalChunkSize = navigator.chunkSize;
         navigator.chunkSize = chunkSize;
 

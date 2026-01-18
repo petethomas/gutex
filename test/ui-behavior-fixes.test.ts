@@ -5,7 +5,7 @@ import { join, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
-const htmlContent = readFileSync(join(__dirname, '../src/web-ui.html'), 'utf-8');
+const htmlContent = readFileSync(join(__dirname, '../../src/web-ui.html'), 'utf-8');
 
 // ============================================================
 // URL UPDATE TIMING TESTS

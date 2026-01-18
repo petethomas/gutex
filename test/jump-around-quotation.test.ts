@@ -21,7 +21,7 @@ const __dirname = path.dirname(fileURLToPath(import.meta.url));
 // ============================================================
 
 // Load the HTML file and extract the JavaScript
-const htmlPath = path.join(__dirname, '..', 'src', 'web-ui.html');
+const htmlPath = path.join(__dirname, '..', '..', 'src', 'web-ui.html');
 const htmlContent = fs.readFileSync(htmlPath, 'utf8');
 
 // Extract formatExcerptText function

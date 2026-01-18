@@ -46,13 +46,16 @@ async function initExcerptMode() {
   }
   
   try {
-    // Fetch using same API as main UI - response has exact byteStart/byteEnd
-    const data = await fetchChunk(params.bookId, params.byteStart, params.chunkSize);
-    if (!data || !data.words) throw new Error('No content returned');
+    // Fetch EXACT bytes for excerpt (not word-aligned)
+    const exactRes = await fetch(
+      `/api/book/${params.bookId}/chunk?byteStart=${params.byteStart}&chunkSize=${params.chunkSize}&exact=1`
+    );
+    const exactData = await exactRes.json();
+    if (!exactData || !exactData.text) throw new Error('No content returned');
     
-    const text = data.formattedText || data.words.join(' ');
-    const byteStart = data.byteStart;
-    const byteEnd = data.byteEnd;
+    const text = exactData.text;
+    const byteStart = exactData.byteStart;
+    const byteEnd = exactData.byteEnd;
     
     // Fetch book info
     let bookTitle = `Book ${params.bookId}`;
