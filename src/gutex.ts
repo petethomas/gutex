@@ -83,13 +83,14 @@ async function handleSearch(bookId: number, phrase: string, fuzzy: boolean): Pro
     // Output results - one per line with URL and curl command
     for (const match of result.matches) {
       const byteStart = match.byteStart;
-      const chunkSize = match.matchedText.length + 200; // Include some context
+      // Use exact match length - the search already snaps to word boundaries
+      const chunkSize = match.matchedText.length;
       
       // Build gutex.app URL
       const gutexUrl = `https://gutex.app/read?excerpt=1#${bookId},${byteStart},${chunkSize}`;
       
       // Build curl command for byte range retrieval
-      const curlCmd = `curl -H "Range: bytes=${byteStart}-${byteStart + chunkSize - 1}" ${bookUrl}`;
+      const curlCmd = `curl -s -H "Range: bytes=${byteStart}-${byteStart + chunkSize - 1}" "https://www.gutenberg.org/cache/epub/${bookId}/pg${bookId}.txt"`;
       
       // Output
       console.log(gutexUrl);
