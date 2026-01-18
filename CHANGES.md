@@ -1,5 +1,43 @@
 # Changes
 
+## v0.2.1 (2026-01-18): Search Bug Fixes and CLI Search Command
+
+### Bug Fixes
+
+**Fixed: Adaptive chunk iteration skipping matches**
+
+When `iterateChunks` doubled chunk size after consecutive misses, the position calculation used the new (larger) chunk size, causing gaps. For example, after chunk 9 ended at byte 393483 with 64KB chunks, increasing to 128KB caused the next position to jump to 458991, skipping matches in between (like the one at 455642).
+
+Fix: Capture `currentChunkSize` at iteration start and use it for position advancement.
+
+**Fixed: Byte/character offset confusion in UTF-8 text**
+
+The search mixed byte offsets with character offsets when handling tail buffers for boundary-spanning matches. With multi-byte UTF-8 characters (BOM, ü, ©, etc.), character positions ≠ byte positions, causing incorrect match locations.
+
+Fix: Simplified search to rely on the existing `overlap` parameter in `iterateChunks` for boundary handling. Properly convert character positions to byte positions using `Buffer.byteLength()`.
+
+### New Features
+
+**CLI `--search` command**
+
+Search within a book from the command line:
+
+```bash
+./gutex --search <bookId> "<phrase>"
+./gutex --search 7849 "stretched across his waistcoat"
+./gutex --search 7849 "some fuzzy phrase here" --fuzzy
+```
+
+Output format (two lines per match):
+1. `https://gutex.app` URL to read the excerpt
+2. `curl` command to retrieve the raw bytes
+
+### Testing
+
+All 781 tests pass.
+
+---
+
 ## v0.2.0 (2026-01-17): Network-Efficient Fulltext Search with Excerpt Builder
 
 ### Summary

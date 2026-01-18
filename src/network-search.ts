@@ -378,6 +378,8 @@ class AdaptiveChunkFetcher {
   
   /**
    * Generator for adaptive chunk iteration with overlap
+   * IMPORTANT: Position advancement uses the chunk size at the START of each iteration,
+   * not after reportMiss potentially increases it.
    */
   async *iterateChunks(
     startByte: number,
@@ -387,15 +389,18 @@ class AdaptiveChunkFetcher {
     let position = startByte;
     
     while (position < endByte) {
-      const chunkEnd = Math.min(position + this.chunkSize - 1, endByte);
+      // Capture chunk size at start of this iteration
+      const currentChunkSize = this.chunkSize;
+      
+      const chunkEnd = Math.min(position + currentChunkSize - 1, endByte);
       const data = await this.fetchRange(position, chunkEnd);
       
       if (data.length === 0) break;
       
       yield { data, start: position, end: position + data.length - 1 };
       
-      // Move position, accounting for overlap to catch boundary-spanning matches
-      position += this.chunkSize - overlap;
+      // Move position using the chunk size from THIS iteration, not a potentially updated one
+      position += currentChunkSize - overlap;
     }
   }
   
@@ -582,7 +587,8 @@ export class NetworkSearcher {
       
       for await (const chunk of fetcher.iterateChunks(searchStart, searchEnd, overlap)) {
         const text = chunk.data.toString('utf-8');
-        const chunkMatches = searcher.processChunk(text, chunk.start);
+        // processChunk returns character positions when passed 0 as offset
+        const chunkMatches = searcher.processChunk(text, 0);
         
         if (chunkMatches.length > 0) {
           fetcher.reportHit();
@@ -590,19 +596,25 @@ export class NetworkSearcher {
           for (const m of chunkMatches) {
             if (matches.length >= maxMatches) break;
             
+            // m.position is a character index within this chunk's text
+            const charPos = m.position;
+            
+            // Convert character position to byte position
+            const prefixChars = text.slice(0, charPos);
+            const bytePos = chunk.start + Buffer.byteLength(prefixChars, 'utf-8');
+            
             // Extract context
-            const localPos = m.position - chunk.start;
-            const contextStart = Math.max(0, localPos - contextSize);
-            const contextEnd = Math.min(text.length, localPos + phrase.length + contextSize);
+            const contextStart = Math.max(0, charPos - contextSize);
+            const contextEnd = Math.min(text.length, charPos + phrase.length + contextSize);
             const context = text.slice(contextStart, contextEnd);
-            const matchedText = text.slice(localPos, localPos + phrase.length);
+            const matchedText = text.slice(charPos, charPos + phrase.length);
             
             matches.push({
-              position: m.position,
+              position: bytePos,
               matchedText,
               context,
               editDistance: m.editDistance,
-              byteStart: m.position
+              byteStart: bytePos
             });
           }
         } else {
@@ -615,40 +627,44 @@ export class NetworkSearcher {
       const searcher = new StreamingKMP(phrase);
       const overlap = searcher.patternLength - 1;
       
-      // We need to track text for context extraction
-      let prevChunkTail = '';
-      
       for await (const chunk of fetcher.iterateChunks(searchStart, searchEnd, overlap)) {
         const text = chunk.data.toString('utf-8');
-        const combinedText = prevChunkTail + text;
-        const offsetAdjust = prevChunkTail.length;
         
-        const chunkMatches = searcher.processChunk(combinedText, chunk.start - offsetAdjust);
+        // Reset KMP state for clean search within this chunk
+        // The overlap parameter in iterateChunks ensures boundary-spanning matches are caught
+        searcher.reset();
         
-        if (chunkMatches.length > 0) {
+        // Search within the chunk text - positions returned are character indices within text
+        const charMatches = searcher.processChunk(text, 0);
+        
+        if (charMatches.length > 0) {
           fetcher.reportHit();
           
-          for (const pos of chunkMatches) {
+          for (const charPos of charMatches) {
             if (matches.length >= maxMatches) break;
             
-            // Fetch context around match if needed
-            const match = await this.extractMatchWithContext(
-              fetcher,
-              pos,
-              phrase,
-              contextSize,
-              combinedText,
-              chunk.start - offsetAdjust
-            );
+            // Convert character position to byte position
+            // Count bytes up to charPos in the text
+            const prefixChars = text.slice(0, charPos);
+            const bytePos = chunk.start + Buffer.byteLength(prefixChars, 'utf-8');
             
-            matches.push(match);
+            // Extract match and context
+            const matchedText = text.slice(charPos, charPos + phrase.length);
+            const contextStart = Math.max(0, charPos - contextSize);
+            const contextEnd = Math.min(text.length, charPos + phrase.length + contextSize);
+            const context = text.slice(contextStart, contextEnd);
+            
+            matches.push({
+              position: bytePos,
+              matchedText,
+              context,
+              editDistance: 0,
+              byteStart: bytePos
+            });
           }
         } else {
           fetcher.reportMiss();
         }
-        
-        // Keep tail for boundary-spanning context
-        prevChunkTail = text.slice(-contextSize);
         
         if (matches.length >= maxMatches) break;
       }

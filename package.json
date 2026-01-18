@@ -1,6 +1,6 @@
 {
   "name": "gutex",
-  "version": "0.2.0",
+  "version": "0.2.1",
   "type": "module",
   "description": "Explore text at Project Gutenberg",
   "main": "dist/src/gutex.js",
@@ -36,7 +36,7 @@
   "author": "pete@xminusone.net",
   "license": "MIT",
   "devDependencies": {
-    "@types/node": "^20.0.0",
+    "@types/node": "^20.19.30",
     "@types/ws": "^8.18.1",
     "canvas": "^3.2.0",
     "typescript": "^5.0.0"

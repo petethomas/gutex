@@ -30,7 +30,7 @@ export class CliOptions implements CliOptionsData {
           this.raw = true;
         } else if (flag === 'help') {
           // Handled by wrapper, ignore here
-        } else if (flag === 'lookup' || flag === 'refresh-catalog') {
+        } else if (flag === 'lookup' || flag === 'refresh-catalog' || flag === 'search' || flag === 'fuzzy') {
           // Handled by wrapper, ignore here
         } else {
           this.errors.push(`Unknown flag: ${arg}`);
