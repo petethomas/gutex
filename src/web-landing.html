@@ -1702,10 +1702,9 @@ function buildWordPositions(text) {
 const excerptBuilder = {
     visible: false,
     match: null,
-    expandedText: '',
-    expandedByteStart: 0,
-    selStart: 0,
-    selEnd: 0
+    words: [],
+    startWordIdx: 0,
+    endWordIdx: 0
 };
 async function performNetworkSearch(bookId, phrase, fuzzy = false) {
     const params = new URLSearchParams({
@@ -1860,26 +1859,72 @@ async function performFulltextSearch() {
 async function openExcerptBuilder(match) {
     excerptBuilder.match = match;
     excerptBuilder.visible = true;
-    const expandStart = Math.max(0, match.byteStart - 300);
-    const expandSize = match.matchedText.length + 600;
+    const expandStart = Math.max(0, match.byteStart - 500);
+    const expandSize = match.matchedText.length + 1000;
     try {
-        const response = await fetch(`/api/book/${fulltextState.bookId}/chunk?byteStart=${expandStart}&chunkSize=${expandSize}`);
+        const response = await fetch(`/api/book/${fulltextState.bookId}/chunk?byteStart=${expandStart}&chunkSize=${expandSize}&exact=1`);
         const data = await response.json();
-        excerptBuilder.expandedText = data.words?.join(' ') || match.context;
-        excerptBuilder.expandedByteStart = data.byteStart ?? expandStart;
+        const rawText = data.text || match.context;
+        const actualByteStart = data.byteStart ?? expandStart;
+        excerptBuilder.words = parseWordsWithPositions(rawText, actualByteStart);
+        const matchByteEnd = match.byteStart + match.matchedText.length;
+        let startIdx = 0;
+        let endIdx = excerptBuilder.words.length - 1;
+        for (let i = 0; i < excerptBuilder.words.length; i++) {
+            const w = excerptBuilder.words[i];
+            if (w.byteStart <= match.byteStart && w.byteEnd > match.byteStart) {
+                startIdx = i;
+            }
+            if (w.byteStart < matchByteEnd && w.byteEnd >= matchByteEnd) {
+                endIdx = i;
+                break;
+            }
+        }
+        excerptBuilder.startWordIdx = startIdx;
+        excerptBuilder.endWordIdx = endIdx;
     }
     catch {
-        excerptBuilder.expandedText = match.context;
-        excerptBuilder.expandedByteStart = match.byteStart - 50;
+        excerptBuilder.words = parseWordsWithPositions(match.context, match.byteStart - 50);
+        excerptBuilder.startWordIdx = 0;
+        excerptBuilder.endWordIdx = Math.max(0, excerptBuilder.words.length - 1);
     }
-    const matchOffsetInExpanded = match.byteStart - excerptBuilder.expandedByteStart;
-    excerptBuilder.selStart = Math.max(0, matchOffsetInExpanded);
-    excerptBuilder.selEnd = Math.min(excerptBuilder.expandedText.length, matchOffsetInExpanded + match.matchedText.length);
     renderExcerptBuilder();
+}
+function parseWordsWithPositions(text, startByte) {
+    const words = [];
+    const encoder = new TextEncoder();
+    let charIdx = 0;
+    let byteIdx = startByte;
+    while (charIdx < text.length) {
+        while (charIdx < text.length && /\s/.test(text[charIdx])) {
+            const charBytes = encoder.encode(text[charIdx]).length;
+            byteIdx += charBytes;
+            charIdx++;
+        }
+        if (charIdx >= text.length)
+            break;
+        const wordStart = charIdx;
+        const wordByteStart = byteIdx;
+        while (charIdx < text.length && !/\s/.test(text[charIdx])) {
+            const charBytes = encoder.encode(text[charIdx]).length;
+            byteIdx += charBytes;
+            charIdx++;
+        }
+        const word = text.slice(wordStart, charIdx);
+        if (word.length > 0) {
+            words.push({
+                word,
+                byteStart: wordByteStart,
+                byteEnd: byteIdx
+            });
+        }
+    }
+    return words;
 }
 function closeExcerptBuilder() {
     excerptBuilder.visible = false;
     excerptBuilder.match = null;
+    excerptBuilder.words = [];
     const builder = $('excerptBuilder');
     if (builder)
         builder.classList.remove('visible');
@@ -1900,13 +1945,13 @@ function renderExcerptBuilder() {
         <div class="excerpt-controls">
           <div class="control-group">
             <label>Start:</label>
-            <button class="adj-btn" data-target="start" data-delta="-1">−word</button>
-            <button class="adj-btn" data-target="start" data-delta="1">+word</button>
+            <button class="adj-btn" data-target="start" data-delta="-1">← word</button>
+            <button class="adj-btn" data-target="start" data-delta="1">word →</button>
           </div>
           <div class="control-group">
             <label>End:</label>
-            <button class="adj-btn" data-target="end" data-delta="-1">−word</button>
-            <button class="adj-btn" data-target="end" data-delta="1">+word</button>
+            <button class="adj-btn" data-target="end" data-delta="-1">← word</button>
+            <button class="adj-btn" data-target="end" data-delta="1">word →</button>
           </div>
         </div>
         <div class="excerpt-byte-info"></div>
@@ -1932,74 +1977,47 @@ function renderExcerptBuilder() {
     updateExcerptPreview();
 }
 function adjustExcerptByWord(target, delta) {
-    const text = excerptBuilder.expandedText;
     if (target === 'start') {
-        if (delta < 0) {
-            let pos = excerptBuilder.selStart - 1;
-            while (pos > 0 && /\s/.test(text[pos]))
-                pos--;
-            while (pos > 0 && !/\s/.test(text[pos - 1]))
-                pos--;
-            excerptBuilder.selStart = Math.max(0, pos);
-        }
-        else {
-            let pos = excerptBuilder.selStart;
-            while (pos < excerptBuilder.selEnd && !/\s/.test(text[pos]))
-                pos++;
-            while (pos < excerptBuilder.selEnd && /\s/.test(text[pos]))
-                pos++;
-            if (pos < excerptBuilder.selEnd) {
-                excerptBuilder.selStart = pos;
-            }
+        const newIdx = excerptBuilder.startWordIdx + delta;
+        if (newIdx >= 0 && newIdx <= excerptBuilder.endWordIdx) {
+            excerptBuilder.startWordIdx = newIdx;
         }
     }
     else {
-        if (delta > 0) {
-            let pos = excerptBuilder.selEnd;
-            while (pos < text.length && /\s/.test(text[pos]))
-                pos++;
-            while (pos < text.length && !/\s/.test(text[pos]))
-                pos++;
-            excerptBuilder.selEnd = Math.min(text.length, pos);
-        }
-        else {
-            let pos = excerptBuilder.selEnd - 1;
-            while (pos > excerptBuilder.selStart && /\s/.test(text[pos]))
-                pos--;
-            while (pos > excerptBuilder.selStart && !/\s/.test(text[pos - 1]))
-                pos--;
-            if (pos > excerptBuilder.selStart) {
-                excerptBuilder.selEnd = pos;
-            }
+        const newIdx = excerptBuilder.endWordIdx + delta;
+        if (newIdx >= excerptBuilder.startWordIdx && newIdx < excerptBuilder.words.length) {
+            excerptBuilder.endWordIdx = newIdx;
         }
     }
     updateExcerptPreview();
 }
 function updateExcerptPreview() {
     const match = excerptBuilder.match;
-    if (!match)
+    if (!match || excerptBuilder.words.length === 0)
         return;
     const preview = document.querySelector('.excerpt-preview');
     const byteInfo = document.querySelector('.excerpt-byte-info');
     const linkDisplay = document.querySelector('.excerpt-link-display');
-    const text = excerptBuilder.expandedText;
-    const selStart = excerptBuilder.selStart;
-    const selEnd = excerptBuilder.selEnd;
-    const selectedText = text.slice(selStart, selEnd);
-    const beforeText = text.slice(Math.max(0, selStart - 40), selStart);
-    const afterText = text.slice(selEnd, Math.min(text.length, selEnd + 40));
+    const startIdx = excerptBuilder.startWordIdx;
+    const endIdx = excerptBuilder.endWordIdx;
+    const selectedWords = excerptBuilder.words.slice(startIdx, endIdx + 1);
+    const selectedText = selectedWords.map(w => w.word).join(' ');
+    const beforeWords = excerptBuilder.words.slice(Math.max(0, startIdx - 5), startIdx);
+    const afterWords = excerptBuilder.words.slice(endIdx + 1, Math.min(excerptBuilder.words.length, endIdx + 6));
+    const beforeText = beforeWords.map(w => w.word).join(' ');
+    const afterText = afterWords.map(w => w.word).join(' ');
     if (preview) {
         preview.innerHTML = `
-      <span class="preview-context">${escapeHtml(beforeText)}</span><span class="preview-selected">${escapeHtml(selectedText)}</span><span class="preview-context">${escapeHtml(afterText)}</span>
+      <span class="preview-context">${beforeText ? escapeHtml(beforeText) + ' ' : ''}</span><span class="preview-selected">${escapeHtml(selectedText)}</span><span class="preview-context">${afterText ? ' ' + escapeHtml(afterText) : ''}</span>
     `;
     }
-    const actualByteStart = excerptBuilder.expandedByteStart + selStart;
-    const actualByteEnd = excerptBuilder.expandedByteStart + selEnd;
-    const chunkSize = actualByteEnd - actualByteStart;
+    const byteStart = selectedWords[0]?.byteStart ?? 0;
+    const byteEnd = selectedWords[selectedWords.length - 1]?.byteEnd ?? 0;
+    const chunkSize = byteEnd - byteStart;
     if (byteInfo) {
-        byteInfo.innerHTML = `<small>Bytes ${actualByteStart.toLocaleString()}–${actualByteEnd.toLocaleString()} (${chunkSize} bytes)</small>`;
+        byteInfo.innerHTML = `<small>Bytes ${byteStart.toLocaleString()}–${byteEnd.toLocaleString()} (${chunkSize} bytes, ${selectedWords.length} words)</small>`;
     }
-    const link = buildExcerptLink(actualByteStart, chunkSize);
+    const link = buildExcerptLink(byteStart, chunkSize);
     if (linkDisplay) {
         linkDisplay.innerHTML = `<code>${escapeHtml(link)}</code>`;
     }
@@ -2010,15 +2028,27 @@ function buildExcerptLink(byteStart, chunkSize) {
     return `${base}?excerpt=1&theme=${theme}#${fulltextState.bookId},${byteStart},${chunkSize}`;
 }
 function openExcerptLink() {
-    const actualByteStart = excerptBuilder.expandedByteStart + excerptBuilder.selStart;
-    const chunkSize = excerptBuilder.selEnd - excerptBuilder.selStart;
-    const link = buildExcerptLink(actualByteStart, chunkSize);
+    const startIdx = excerptBuilder.startWordIdx;
+    const endIdx = excerptBuilder.endWordIdx;
+    const selectedWords = excerptBuilder.words.slice(startIdx, endIdx + 1);
+    if (selectedWords.length === 0)
+        return;
+    const byteStart = selectedWords[0].byteStart;
+    const byteEnd = selectedWords[selectedWords.length - 1].byteEnd;
+    const chunkSize = byteEnd - byteStart;
+    const link = buildExcerptLink(byteStart, chunkSize);
     window.open(link, '_blank');
 }
 async function copyExcerptLink() {
-    const actualByteStart = excerptBuilder.expandedByteStart + excerptBuilder.selStart;
-    const chunkSize = excerptBuilder.selEnd - excerptBuilder.selStart;
-    const link = buildExcerptLink(actualByteStart, chunkSize);
+    const startIdx = excerptBuilder.startWordIdx;
+    const endIdx = excerptBuilder.endWordIdx;
+    const selectedWords = excerptBuilder.words.slice(startIdx, endIdx + 1);
+    if (selectedWords.length === 0)
+        return;
+    const byteStart = selectedWords[0].byteStart;
+    const byteEnd = selectedWords[selectedWords.length - 1].byteEnd;
+    const chunkSize = byteEnd - byteStart;
+    const link = buildExcerptLink(byteStart, chunkSize);
     try {
         await navigator.clipboard.writeText(link);
         const btn = document.querySelector('.copy-link-btn');

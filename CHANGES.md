@@ -1,5 +1,34 @@
 # Changes
 
+## v0.2.2 (2026-01-18): Excerpt Builder UX Overhaul
+
+### Bug Fixes
+
+**Fixed: Excerpt builder producing mid-word fragments**
+
+The excerpt builder was mixing byte offsets with character indices, causing selections to cut words in half (e.g., "... ck coat and from a sheath..." instead of starting at a word boundary).
+
+Root causes:
+- API returned word-aligned chunks joined with spaces, losing original byte positions
+- Selection indices were treated as both character and byte offsets
+- UTF-8 multi-byte characters caused offset drift
+
+**Solution: Complete rewrite of excerpt builder**
+
+- Now fetches raw bytes with `exact=1` API mode
+- Parses text into words with precise byte positions using `TextEncoder`
+- Selection operates on word indices, not character/byte offsets
+- `-word/+word` buttons reliably move by complete words
+- Byte range for excerpt link computed from actual word boundaries
+
+### UI Improvements
+
+- Changed button labels from `−word/+word` to `← word/word →` for clearer directionality
+- Shows word count in byte info: "Bytes X–Y (Z bytes, N words)"
+- Context preview shows up to 5 words before/after selection
+
+---
+
 ## v0.2.1 (2026-01-18): Search Bug Fixes and CLI Search Command
 
 ### Bug Fixes

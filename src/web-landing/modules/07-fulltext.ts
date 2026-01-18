@@ -22,16 +22,22 @@ interface NetworkSearchResult {
   fuzzy: boolean;
 }
 
-// Excerpt builder state - tracks actual byte positions
+// Word with its byte position
+interface WordInfo {
+  word: string;
+  byteStart: number;
+  byteEnd: number;
+}
+
+// Excerpt builder state - tracks words and their byte positions
 const excerptBuilder = {
   visible: false,
   match: null as NetworkSearchMatch | null,
-  // The expanded text we fetched for adjustment
-  expandedText: '',
-  expandedByteStart: 0,
-  // Current selection within expanded text (character indices)
-  selStart: 0,
-  selEnd: 0
+  // Array of words with their byte positions
+  words: [] as WordInfo[],
+  // Current selection as word indices (inclusive)
+  startWordIdx: 0,
+  endWordIdx: 0
 };
 
 async function performNetworkSearch(
@@ -219,37 +225,97 @@ async function openExcerptBuilder(match: NetworkSearchMatch): Promise<void> {
   excerptBuilder.match = match;
   excerptBuilder.visible = true;
   
-  // Fetch expanded context (±300 bytes from match to allow adjustment)
-  const expandStart = Math.max(0, match.byteStart - 300);
-  const expandSize = match.matchedText.length + 600;
+  // Fetch raw bytes around the match for word-boundary detection
+  // Get ~500 bytes before and after to have room for adjustment
+  const expandStart = Math.max(0, match.byteStart - 500);
+  const expandSize = match.matchedText.length + 1000;
   
   try {
+    // Fetch raw text (exact bytes, not word-aligned)
     const response = await fetch(
-      `/api/book/${fulltextState.bookId}/chunk?byteStart=${expandStart}&chunkSize=${expandSize}`
+      `/api/book/${fulltextState.bookId}/chunk?byteStart=${expandStart}&chunkSize=${expandSize}&exact=1`
     );
     const data = await response.json();
-    excerptBuilder.expandedText = data.words?.join(' ') || match.context;
-    excerptBuilder.expandedByteStart = data.byteStart ?? expandStart;
+    const rawText = data.text || match.context;
+    const actualByteStart = data.byteStart ?? expandStart;
+    
+    // Parse into words with byte positions
+    excerptBuilder.words = parseWordsWithPositions(rawText, actualByteStart);
+    
+    // Find which words contain the match
+    const matchByteEnd = match.byteStart + match.matchedText.length;
+    let startIdx = 0;
+    let endIdx = excerptBuilder.words.length - 1;
+    
+    for (let i = 0; i < excerptBuilder.words.length; i++) {
+      const w = excerptBuilder.words[i];
+      if (w.byteStart <= match.byteStart && w.byteEnd > match.byteStart) {
+        startIdx = i;
+      }
+      if (w.byteStart < matchByteEnd && w.byteEnd >= matchByteEnd) {
+        endIdx = i;
+        break;
+      }
+    }
+    
+    excerptBuilder.startWordIdx = startIdx;
+    excerptBuilder.endWordIdx = endIdx;
+    
   } catch {
-    // Fall back to original context
-    excerptBuilder.expandedText = match.context;
-    excerptBuilder.expandedByteStart = match.byteStart - 50;
+    // Fall back to simple parsing of match context
+    excerptBuilder.words = parseWordsWithPositions(match.context, match.byteStart - 50);
+    excerptBuilder.startWordIdx = 0;
+    excerptBuilder.endWordIdx = Math.max(0, excerptBuilder.words.length - 1);
   }
   
-  // Initialize selection to the match position within expanded text
-  const matchOffsetInExpanded = match.byteStart - excerptBuilder.expandedByteStart;
-  excerptBuilder.selStart = Math.max(0, matchOffsetInExpanded);
-  excerptBuilder.selEnd = Math.min(
-    excerptBuilder.expandedText.length,
-    matchOffsetInExpanded + match.matchedText.length
-  );
-  
   renderExcerptBuilder();
+}
+
+// Parse text into words with their byte positions
+function parseWordsWithPositions(text: string, startByte: number): WordInfo[] {
+  const words: WordInfo[] = [];
+  const encoder = new TextEncoder();
+  
+  let charIdx = 0;
+  let byteIdx = startByte;
+  
+  while (charIdx < text.length) {
+    // Skip whitespace
+    while (charIdx < text.length && /\s/.test(text[charIdx])) {
+      const charBytes = encoder.encode(text[charIdx]).length;
+      byteIdx += charBytes;
+      charIdx++;
+    }
+    
+    if (charIdx >= text.length) break;
+    
+    // Collect word
+    const wordStart = charIdx;
+    const wordByteStart = byteIdx;
+    
+    while (charIdx < text.length && !/\s/.test(text[charIdx])) {
+      const charBytes = encoder.encode(text[charIdx]).length;
+      byteIdx += charBytes;
+      charIdx++;
+    }
+    
+    const word = text.slice(wordStart, charIdx);
+    if (word.length > 0) {
+      words.push({
+        word,
+        byteStart: wordByteStart,
+        byteEnd: byteIdx
+      });
+    }
+  }
+  
+  return words;
 }
 
 function closeExcerptBuilder(): void {
   excerptBuilder.visible = false;
   excerptBuilder.match = null;
+  excerptBuilder.words = [];
   const builder = $('excerptBuilder');
   if (builder) builder.classList.remove('visible');
 }
@@ -272,13 +338,13 @@ function renderExcerptBuilder(): void {
         <div class="excerpt-controls">
           <div class="control-group">
             <label>Start:</label>
-            <button class="adj-btn" data-target="start" data-delta="-1">−word</button>
-            <button class="adj-btn" data-target="start" data-delta="1">+word</button>
+            <button class="adj-btn" data-target="start" data-delta="-1">← word</button>
+            <button class="adj-btn" data-target="start" data-delta="1">word →</button>
           </div>
           <div class="control-group">
             <label>End:</label>
-            <button class="adj-btn" data-target="end" data-delta="-1">−word</button>
-            <button class="adj-btn" data-target="end" data-delta="1">+word</button>
+            <button class="adj-btn" data-target="end" data-delta="-1">← word</button>
+            <button class="adj-btn" data-target="end" data-delta="1">word →</button>
           </div>
         </div>
         <div class="excerpt-byte-info"></div>
@@ -309,47 +375,15 @@ function renderExcerptBuilder(): void {
 }
 
 function adjustExcerptByWord(target: 'start' | 'end', delta: number): void {
-  const text = excerptBuilder.expandedText;
-  
   if (target === 'start') {
-    if (delta < 0) {
-      // Move start backward (include previous word)
-      let pos = excerptBuilder.selStart - 1;
-      // Skip whitespace
-      while (pos > 0 && /\s/.test(text[pos])) pos--;
-      // Find start of previous word
-      while (pos > 0 && !/\s/.test(text[pos - 1])) pos--;
-      excerptBuilder.selStart = Math.max(0, pos);
-    } else {
-      // Move start forward (exclude first word)
-      let pos = excerptBuilder.selStart;
-      // Skip current word
-      while (pos < excerptBuilder.selEnd && !/\s/.test(text[pos])) pos++;
-      // Skip whitespace
-      while (pos < excerptBuilder.selEnd && /\s/.test(text[pos])) pos++;
-      if (pos < excerptBuilder.selEnd) {
-        excerptBuilder.selStart = pos;
-      }
+    const newIdx = excerptBuilder.startWordIdx + delta;
+    if (newIdx >= 0 && newIdx <= excerptBuilder.endWordIdx) {
+      excerptBuilder.startWordIdx = newIdx;
     }
   } else {
-    if (delta > 0) {
-      // Move end forward (include next word)
-      let pos = excerptBuilder.selEnd;
-      // Skip whitespace
-      while (pos < text.length && /\s/.test(text[pos])) pos++;
-      // Find end of next word
-      while (pos < text.length && !/\s/.test(text[pos])) pos++;
-      excerptBuilder.selEnd = Math.min(text.length, pos);
-    } else {
-      // Move end backward (exclude last word)
-      let pos = excerptBuilder.selEnd - 1;
-      // Skip whitespace from end
-      while (pos > excerptBuilder.selStart && /\s/.test(text[pos])) pos--;
-      // Find start of last word
-      while (pos > excerptBuilder.selStart && !/\s/.test(text[pos - 1])) pos--;
-      if (pos > excerptBuilder.selStart) {
-        excerptBuilder.selEnd = pos;
-      }
+    const newIdx = excerptBuilder.endWordIdx + delta;
+    if (newIdx >= excerptBuilder.startWordIdx && newIdx < excerptBuilder.words.length) {
+      excerptBuilder.endWordIdx = newIdx;
     }
   }
   
@@ -358,39 +392,43 @@ function adjustExcerptByWord(target: 'start' | 'end', delta: number): void {
 
 function updateExcerptPreview(): void {
   const match = excerptBuilder.match;
-  if (!match) return;
+  if (!match || excerptBuilder.words.length === 0) return;
   
   const preview = document.querySelector('.excerpt-preview');
   const byteInfo = document.querySelector('.excerpt-byte-info');
   const linkDisplay = document.querySelector('.excerpt-link-display');
   
-  const text = excerptBuilder.expandedText;
-  const selStart = excerptBuilder.selStart;
-  const selEnd = excerptBuilder.selEnd;
+  const startIdx = excerptBuilder.startWordIdx;
+  const endIdx = excerptBuilder.endWordIdx;
   
-  // Selected text
-  const selectedText = text.slice(selStart, selEnd);
-  // Context around selection (for display only)
-  const beforeText = text.slice(Math.max(0, selStart - 40), selStart);
-  const afterText = text.slice(selEnd, Math.min(text.length, selEnd + 40));
+  // Build selected text from words
+  const selectedWords = excerptBuilder.words.slice(startIdx, endIdx + 1);
+  const selectedText = selectedWords.map(w => w.word).join(' ');
+  
+  // Context words (up to 5 before and after)
+  const beforeWords = excerptBuilder.words.slice(Math.max(0, startIdx - 5), startIdx);
+  const afterWords = excerptBuilder.words.slice(endIdx + 1, Math.min(excerptBuilder.words.length, endIdx + 6));
+  
+  const beforeText = beforeWords.map(w => w.word).join(' ');
+  const afterText = afterWords.map(w => w.word).join(' ');
   
   if (preview) {
     preview.innerHTML = `
-      <span class="preview-context">${escapeHtml(beforeText)}</span><span class="preview-selected">${escapeHtml(selectedText)}</span><span class="preview-context">${escapeHtml(afterText)}</span>
+      <span class="preview-context">${beforeText ? escapeHtml(beforeText) + ' ' : ''}</span><span class="preview-selected">${escapeHtml(selectedText)}</span><span class="preview-context">${afterText ? ' ' + escapeHtml(afterText) : ''}</span>
     `;
   }
   
-  // Calculate actual byte positions
-  const actualByteStart = excerptBuilder.expandedByteStart + selStart;
-  const actualByteEnd = excerptBuilder.expandedByteStart + selEnd;
-  const chunkSize = actualByteEnd - actualByteStart;
+  // Calculate byte positions from word boundaries
+  const byteStart = selectedWords[0]?.byteStart ?? 0;
+  const byteEnd = selectedWords[selectedWords.length - 1]?.byteEnd ?? 0;
+  const chunkSize = byteEnd - byteStart;
   
   if (byteInfo) {
-    byteInfo.innerHTML = `<small>Bytes ${actualByteStart.toLocaleString()}–${actualByteEnd.toLocaleString()} (${chunkSize} bytes)</small>`;
+    byteInfo.innerHTML = `<small>Bytes ${byteStart.toLocaleString()}–${byteEnd.toLocaleString()} (${chunkSize} bytes, ${selectedWords.length} words)</small>`;
   }
   
   // Show link
-  const link = buildExcerptLink(actualByteStart, chunkSize);
+  const link = buildExcerptLink(byteStart, chunkSize);
   if (linkDisplay) {
     linkDisplay.innerHTML = `<code>${escapeHtml(link)}</code>`;
   }
@@ -403,18 +441,32 @@ function buildExcerptLink(byteStart: number, chunkSize: number): string {
 }
 
 function openExcerptLink(): void {
-  const actualByteStart = excerptBuilder.expandedByteStart + excerptBuilder.selStart;
-  const chunkSize = excerptBuilder.selEnd - excerptBuilder.selStart;
+  const startIdx = excerptBuilder.startWordIdx;
+  const endIdx = excerptBuilder.endWordIdx;
+  const selectedWords = excerptBuilder.words.slice(startIdx, endIdx + 1);
   
-  const link = buildExcerptLink(actualByteStart, chunkSize);
+  if (selectedWords.length === 0) return;
+  
+  const byteStart = selectedWords[0].byteStart;
+  const byteEnd = selectedWords[selectedWords.length - 1].byteEnd;
+  const chunkSize = byteEnd - byteStart;
+  
+  const link = buildExcerptLink(byteStart, chunkSize);
   window.open(link, '_blank');
 }
 
 async function copyExcerptLink(): Promise<void> {
-  const actualByteStart = excerptBuilder.expandedByteStart + excerptBuilder.selStart;
-  const chunkSize = excerptBuilder.selEnd - excerptBuilder.selStart;
+  const startIdx = excerptBuilder.startWordIdx;
+  const endIdx = excerptBuilder.endWordIdx;
+  const selectedWords = excerptBuilder.words.slice(startIdx, endIdx + 1);
   
-  const link = buildExcerptLink(actualByteStart, chunkSize);
+  if (selectedWords.length === 0) return;
+  
+  const byteStart = selectedWords[0].byteStart;
+  const byteEnd = selectedWords[selectedWords.length - 1].byteEnd;
+  const chunkSize = byteEnd - byteStart;
+  
+  const link = buildExcerptLink(byteStart, chunkSize);
   
   try {
     await navigator.clipboard.writeText(link);
